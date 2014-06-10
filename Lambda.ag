@@ -1,0 +1,95 @@
+module {Lambda} {}
+{
+import Data.Maybe
+import qualified Data.Set as S
+import Type
+import TSubst
+
+type Env = [(Var,Type)]
+
+type Var = String
+
+instance Show Term where
+    show (Id v) = v
+    show (Abs v t) = "\\"++v++" -> " ++(show t)
+    show (App t1 t2) = "("++(show t1)++") "++"("++(show t2)++")"
+
+    
+addEnv :: Var -> Type -> Env -> Maybe Env
+addEnv v t env = maybe (add v t env) (const Nothing) (lookup v env)
+    where add v t env = Just $ (v,t):env
+    
+    
+-- Dado un environment y una lista de variables de tipo,
+-- devuelve un tipo atómico con una variable fresca.
+freshType :: Env -> S.Set TVar -> Type
+freshType env vlist = 
+    AtomType $ freshTVar $ vlist `S.union` (S.unions (map allTVars (map snd env)))
+    
+-- Tipo inicial
+initType = AtomType initTVar
+
+-- Funcion principal, dado un término devuelve el tipo inferido
+getType :: Term -> Type
+getType t = 
+    let tsubst = changeType_Syn_Term (wrap_Term (sem_Term t)
+                                        (Inh_Term [] initType (S.singleton initTVar)))
+    in reduceIndexes (apply tsubst initType)
+    
+}
+
+data Term
+    | Id  ident :: {Var}
+    | App lt,rt :: Term
+    | Abs var   :: {Var}
+          term  :: Term
+          
+attr Term 
+    -- Asignación de variables a tipos
+    inh envType       :: {Env}
+    -- Tipo de un término lambda
+    inh termType      :: Type
+    -- Variables de tipo que se ya se usan, necesario para 
+    -- elegir variables frescas:
+    inh usedTVars     :: {S.Set TVar}
+    -- Sustitución de variables de tipo por tipo.
+    syn changeType    :: {TSubst}
+    
+sem Term
+    | Id loc.envInfo    = lookup @ident @lhs.envType
+         lhs.changeType = case @envInfo of
+                            Just t@(AtomType v) -> if @lhs.termType == t
+                                                    then []
+                                                    else appendTS v @lhs.termType []
+                            Nothing -> error ("Not in scope: "++(@ident))
+                            
+    | Abs loc.ntypel      = case @lhs.termType of
+                             FunType t1 _ -> t1
+                             AtomType v   -> freshType @lhs.envType 
+                                                (v `S.insert` (@lhs.usedTVars))
+          loc.ntyper      = case @lhs.termType of
+                             FunType _ t2 -> t2
+                             AtomType v   -> freshType @lhs.envType 
+                                            ((v `S.insert` (allTVars @ntypel))
+                                                `S.union` (@lhs.usedTVars))
+          loc.menv        = addEnv @var @ntypel @lhs.envType
+          term.envType    = maybe (error "Captura de variable") id @menv
+              .termType  = @ntyper
+              .usedTVars = @lhs.usedTVars `S.union` (allTVars (@lhs.termType))
+          lhs.changeType = case @lhs.termType of
+                              FunType _ _ -> @term.changeType
+                              AtomType v  -> appendTS v (FunType @ntypel @ntyper) 
+                                                    @term.changeType 
+                                                    
+    | App loc.ntype      = freshType @lhs.envType ((allTVars (@lhs.termType))
+                                                    `S.union`(@lhs.usedTVars))
+          lt.termType    = FunType @ntype @lhs.termType
+            .usedTVars   = @lhs.usedTVars `S.union` (allTVars (@lhs.termType))
+          loc.lusedTVars = S.unions (map (\(v,t2) -> v `S.insert` (allTVars t2)) 
+                                        @lt.changeType)
+          rt.termType    = @ntype
+            .usedTVars   = S.unions [@lhs.usedTVars,@lusedTVars,
+                                        allTVars (@lhs.termType)]
+          lhs.changeType = concatTSubst @lt.changeType @rt.changeType
+
+    
