@@ -1,6 +1,6 @@
 {-# Language FlexibleContexts, RankNTypes #-}
 {-# Language ImpredicativeTypes, NoMonomorphismRestriction #-}
-module Parser where
+module Parser ( parseFromStringTerm ) where
 
 import Text.ParserCombinators.UU
 import Text.ParserCombinators.UU.Utils
@@ -45,7 +45,7 @@ parseDotSym :: Parser String
 parseDotSym = parseTermSym (lexeme $ pSymbol ".") extraDotSyms
 
 parseAppSym :: Parser String
-parseAppSym = parseTermSym (lexeme $ pSymbol "@") extraDotSyms
+parseAppSym = parseTermSym (lexeme $ pSymbol "@") extraAppSyms
 
 parseVar :: Parser Var
 parseVar = lexeme $ many pLetter
@@ -57,14 +57,21 @@ parseApp :: [Var] -> Parser Term
 parseApp vars = (App <$ parseAppSym) `pChainl` (parseTerm' vars)
 
 parseAbs :: [Var] -> Parser Term
-parseAbs vars = join $ uncurry (<$>) 
-                    <$> 
-                (Abs &&& parseTerm . (:vars)) <$ parseLamSym <*> parseVar <* parseDotSym
+parseAbs vars = 
+        addLength 1 $
+        join $ uncurry (<$>) 
+            <$> 
+        (Abs &&& parseTerm . (:vars)) <$ parseLamSym <*> parseVar <* parseDotSym
 
 parseTerm' :: [Var] -> Parser Term
 parseTerm' vars =  parseId vars
                <|> parseAbs vars
-               -- <|> pParens (parseTerm vars)
+               <|> pParens (parseTerm vars)
 
 parseTerm :: [Var] -> Parser Term
 parseTerm vars = parseApp vars
+
+parseFromStringTerm :: [Var] -> String -> ([Term],[Error LineColPos])
+parseFromStringTerm vars = parse ((,) <$> amb (parseTerm vars) <*> pEnd)
+                           .
+                           (createStr (LineColPos 0 0 0))
