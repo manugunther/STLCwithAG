@@ -123,10 +123,11 @@ putParen' NoParen = id
 putParen' _       = parens
 
 
-uncurryN :: (a -> b -> c -> d -> e -> f) -> (a,b,c,d,e) -> f
-uncurryN f (a,b,c,d,e) = f a b c d e
+uncurryN :: (a -> b -> c -> d -> e -> f -> g) -> 
+            (a,b,c,d,e,f) -> g
+uncurryN fun (a,b,c,d,e,f) = fun a b c d e f
 
-inhValues = ([],NoParen,[],initType,(S.singleton initTVar))
+inhValues = ([],NoParen,[],undefined,initType,(S.singleton initTVar))
 
 pprint :: Int -> Term -> String
 pprint n t = 
@@ -187,23 +188,38 @@ translatePos = map intToPIndex
 
 -- Funcion principal, dado un término devuelve el tipo inferido
 subTerm :: Term -> Position -> Maybe Term
-subTerm t pos = sterm_Syn_Term (wrap_Term (sem_Term t)
-                                        (Inh_Term [] NoParen pos initType (S.singleton initTVar)))
+subTerm t pos = sterm_Syn_Term (wrap_Term (sem_Term t) inh)
+    where inh = Inh_Term [] NoParen pos undefined initType (S.singleton initTVar)
 }
 
--- REDEX
+-- Substitucion
+
+attr Term
+    -- substitucion
+    inh subst    :: {(Var,Term)}
+    syn substres :: Term
+    
+    
+sem Term
+    | Id lhs.substres  = if (fst @lhs.subst == @ident)
+                            then snd @lhs.subst
+                            else Id @ident
+    | App lhs.substres = App @lt.substres @rt.substres
+    -- Cuando substituimos en una abstraccion, si la variable
+    -- a substituir es la ligada, no hacemos nada. Asumimos convención
+    -- de Barendrget (por ahora)
+    | Abs lhs.substres = if (fst @lhs.subst == @var)
+                            then Abs @var @term.copy
+                            else Abs @var @term.substres
+
+                            
+
+
+-- Reducción de un β-Redex
 
 {
-isRedex :: Term -> Bool
-isRedex (App (Abs _ _) _) = True
-isRedex _                 = False
+-- betaReduction :: Term -> Position -> Maybe Term
+-- betaReduction
+
 }
-{-
-attr Term
-    -}
-
-
-
-
-
 
