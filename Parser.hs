@@ -17,7 +17,7 @@ extraLamSyms :: [String]
 extraLamSyms  = ["λ"]
 
 extraDotSyms :: [String]
-extraDotSyms = ["→"]
+extraDotSyms = ["→","->"]
 
 extraAppSyms :: [String]
 extraAppSyms = []

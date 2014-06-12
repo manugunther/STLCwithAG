@@ -11,7 +11,7 @@ type Env = [(Var,Type)]
 type Var = String
 
 instance Show Term where
-    show = pprint 25
+    show = pprint 50
     
 addEnv :: Var -> Type -> Env -> Maybe Env
 addEnv v t env = maybe (add v t env) (const Nothing) (lookup v env)
@@ -31,7 +31,7 @@ initType = AtomType initTVar
 getType :: Term -> Type
 getType t = 
     let tsubst = changeType_Syn_Term (wrap_Term (sem_Term t)
-                                        (Inh_Term [] NoParen initType (S.singleton initTVar)))
+                                        (uncurryN Inh_Term inhValues))
     in reduceIndexes (apply tsubst initType)
     
 }
@@ -122,10 +122,88 @@ putParen' :: ParenInfo -> Doc -> Doc
 putParen' NoParen = id
 putParen' _       = parens
 
+
+uncurryN :: (a -> b -> c -> d -> e -> f) -> (a,b,c,d,e) -> f
+uncurryN f (a,b,c,d,e) = f a b c d e
+
+inhValues = ([],NoParen,[],initType,(S.singleton initTVar))
+
 pprint :: Int -> Term -> String
 pprint n t = 
     let pdoc = pprint_Syn_Term (wrap_Term (sem_Term t)
-                                        (Inh_Term [] NoParen initType (S.singleton initTVar)))
+                                        (uncurryN Inh_Term inhValues))
     in displayS (renderPretty 1 n pdoc) $ ""
 }
     
+-- SubTerminos
+
+{
+data PosIndex = LTerm | RTerm | AbsTerm
+
+type Position = [PosIndex]
+}
+
+-- Substitucion de un término por otro
+attr Term
+    -- posicion del subtermino
+    inh pos        :: {Position}
+    -- subtermino en la posicion
+    syn sterm      :: {Maybe Term}
+    -- copia
+    syn copy       :: self
+
+sem Term
+    | Id lhs.sterm  = if null (@lhs.pos)
+                        then Just $ Id @ident
+                        else Nothing
+    | App lhs.sterm = if null (@lhs.pos)
+                        then Just $ App @lt.copy @rt.copy
+                        else case head @lhs.pos of
+                                LTerm -> @lt.sterm
+                                RTerm -> @rt.sterm
+                                _     -> Nothing
+          lt.pos    = drop 1 @lhs.pos
+          rt.pos    = drop 1 @lhs.pos
+    | Abs lhs.sterm = if null (@lhs.pos)
+                        then Just $ Abs @var @term.copy
+                        else case head @lhs.pos of
+                                AbsTerm -> @term.sterm
+                                _     -> Nothing
+          term.pos  = drop 1 @lhs.pos
+    
+{
+ifnonEmpty :: Position -> (PosIndex -> Maybe a) -> Maybe a
+ifnonEmpty [] _     = Nothing
+ifnonEmpty (p:ps) f = f p
+
+intToPIndex :: Int -> PosIndex
+intToPIndex 0 = AbsTerm
+intToPIndex 1 = LTerm
+intToPIndex 2 = RTerm
+intToPIndex _ = error "Posición no válida"
+
+translatePos :: [Int] -> Position
+translatePos = map intToPIndex
+
+-- Funcion principal, dado un término devuelve el tipo inferido
+subTerm :: Term -> Position -> Maybe Term
+subTerm t pos = sterm_Syn_Term (wrap_Term (sem_Term t)
+                                        (Inh_Term [] NoParen pos initType (S.singleton initTVar)))
+}
+
+-- REDEX
+
+{
+isRedex :: Term -> Bool
+isRedex (App (Abs _ _) _) = True
+isRedex _                 = False
+}
+{-
+attr Term
+    -}
+
+
+
+
+
+
