@@ -11,10 +11,7 @@ type Env = [(Var,Type)]
 type Var = String
 
 instance Show Term where
-    show (Id v) = v
-    show (Abs v t) = "\\"++v++" -> " ++(show t)
-    show (App t1 t2) = "("++(show t1)++") "++"("++(show t2)++")"
-
+    show = pprint 25
     
 addEnv :: Var -> Type -> Env -> Maybe Env
 addEnv v t env = maybe (add v t env) (const Nothing) (lookup v env)
@@ -125,12 +122,10 @@ putParen' :: ParenInfo -> Doc -> Doc
 putParen' NoParen = id
 putParen' _       = parens
 
-pprint' t n = 
+pprint :: Int -> Term -> String
+pprint n t = 
     let pdoc = pprint_Syn_Term (wrap_Term (sem_Term t)
                                         (Inh_Term [] NoParen initType (S.singleton initTVar)))
     in displayS (renderPretty 1 n pdoc) $ ""
-
-pprint :: Term -> String
-pprint t = pprint' t 30
 }
     
