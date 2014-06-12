@@ -1,6 +1,6 @@
 {-# Language FlexibleContexts, RankNTypes #-}
 {-# Language ImpredicativeTypes, NoMonomorphismRestriction #-}
-module Parser ( parseFromStringTerm ) where
+module Parser ( parserTerm ) where
 
 import Text.ParserCombinators.UU
 import Text.ParserCombinators.UU.Utils
@@ -75,3 +75,6 @@ parseFromStringTerm :: [Var] -> String -> ([Term],[Error LineColPos])
 parseFromStringTerm vars = parse ((,) <$> amb (parseTerm vars) <*> pEnd)
                            .
                            (createStr (LineColPos 0 0 0))
+
+parserTerm :: String -> (Term,[Error LineColPos])
+parserTerm = (head *** id) . parseFromStringTerm []
