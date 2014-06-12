@@ -1,7 +1,6 @@
 import Lambda
 
 import Parser
-import Print
 
 -- Examples
 

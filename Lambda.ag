@@ -4,6 +4,7 @@ import Data.Maybe
 import qualified Data.Set as S
 import Type
 import TSubst
+import UU.PPrint
 
 type Env = [(Var,Type)]
 
@@ -33,7 +34,7 @@ initType = AtomType initTVar
 getType :: Term -> Type
 getType t = 
     let tsubst = changeType_Syn_Term (wrap_Term (sem_Term t)
-                                        (Inh_Term [] initType (S.singleton initTVar)))
+                                        (Inh_Term [] NoParen initType (S.singleton initTVar)))
     in reduceIndexes (apply tsubst initType)
     
 }
@@ -92,4 +93,44 @@ sem Term
                                         allTVars (@lhs.termType)]
           lhs.changeType = concatTSubst @lt.changeType @rt.changeType
 
+
+          
+-- PRETTY PRINTING
+
+{
+data ParenInfo = NoParen | Paren | ParenAbs
+}
+
+attr Term 
+    syn pprint          :: {Doc}
+    inh paren           :: {ParenInfo}
+    
+sem Term
+    | Id  lhs.pprint  = text @ident
+    | App lhs.pprint  = (putParen @lhs.paren) (group $ @lt.pprint <> line <> (group $ text "@" <> line <>
+                        @rt.pprint))
+          rt.paren    = Paren
+          lt.paren    = ParenAbs
+    | Abs lhs.pprint  = (putParen' @lhs.paren) (text "λ " <> text @var <> 
+                        text " →" <> group (nest 3 $ line <> @term.pprint))
+          term.paren  = NoParen
+    
+    
+{
+putParen :: ParenInfo -> Doc -> Doc
+putParen Paren = parens
+putParen _     = id
+
+putParen' :: ParenInfo -> Doc -> Doc
+putParen' NoParen = id
+putParen' _       = parens
+
+pprint' t n = 
+    let pdoc = pprint_Syn_Term (wrap_Term (sem_Term t)
+                                        (Inh_Term [] NoParen initType (S.singleton initTVar)))
+    in displayS (renderPretty 1 n pdoc) $ ""
+
+pprint :: Term -> String
+pprint t = pprint' t 30
+}
     
