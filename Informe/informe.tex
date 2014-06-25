@@ -129,7 +129,98 @@ dos veces:
 		      cataTree (rep_min_alg n) t
 \end{lstlisting}
 
+Observemos que en la función $rep\_min\_alg$ obtenemos el álgebra a partir de un entero.
+En lugar de realizar esto, podríamos definir un álgebra que nos permita calcular una función
+que dado un entero construye el árbol consistente en reemplazar todos los valores
+por ese entero:
 
+\begin{lstlisting}
+  rep_min_alg' :: FTreeAlgebra (Int -> Tree)
+  rep_min_alg' = either (const Leaf) 
+                        (\(lfun,rfun) -> \m -> 
+			    Bin (lfun m,rfun m))
+\end{lstlisting}
+
+\noindent y entonces el resultado a nuestro problema lo podemos obtener así:
+
+\begin{lstlisting}
+  replace_min' :: Tree -> Tree
+  replace_min' t = (cataTree rep_min_alg' t) (cataTree min_alg t) 
+\end{lstlisting}
+
+Podemos ver en esta última definición que las dos llamadas a la función $cataTree$ son independientes
+entre sí por lo que podríamos calcular una sola FTree-álgebra que obtenga ambos resultados
+simultáneamente. Con $min\_alg$ calculamos el mínimo y con $rep\_min\_alg'$ la función para construir
+el árbol, por lo cual si pudiéramos realizar el producto de esas dos FTree-álgebras obtendríamos ambos
+resultados:
+
+\begin{lstlisting}
+  infix 9 `x`
+
+  x :: FTreeAlgebra a -> FTreeAlgebra b -> FTreeAlgebra (a,b)
+  fa `x` fb = either  (\i -> (fa $ Left i,fb $ Left i))
+		      (\((a,b),(a',b')) -> 
+			(fa $ Right (a,a'),fb $ Right (b,b')))
+			  
+
+  rep_min_alg'' :: FTreeAlgebra (Int,Int -> Tree)
+  rep_min_alg'' = min_alg `x` rep_min_alg'
+  
+\end{lstlisting}
+
+  Ahora entonces podemos obtener el resultado al problema realizando una sola llamada
+  a $cataTree$:
+  
+\begin{lstlisting}
+ replace_min'' :: Tree -> Tree
+ replace_min'' t = r m
+    where (m, r) = cataTree rep_min_alg'' t
+\end{lstlisting}
+
+  Para realizar nuestra última mejora, consideremos la siguiente función que dados dos
+  tipos isomorfos $a$ y $b$, y una $FTreeAlgebra\;a$, obtiene una $FTreeAlgebra\;b$:
+
+  \begin{lstlisting}
+   getIsoAlg :: (a -> b) -> (b -> a) -> FTreeAlgebra a -> FTreeAlgebra b
+   getIsoAlg fab fba fa = either (fab . fa . Left)
+                                 (fab . fa . Right . (fba *** fba))
+  \end{lstlisting}
+  
+  En nuestro problema tenemos una FTree-álgebra de tipo 
+  
+  \begin{lstlisting}
+   (Int,Int -> Tree)
+  \end{lstlisting}
+  
+  Y para nuestro problema, la podemos considerar equivalente al tipo (explicar esto)
+  
+  \begin{lstlisting}
+   Int -> (Int,Tree)
+  \end{lstlisting} 
+  
+  Necesitaríamos dos funciones para intercambiar estos tipos tal que sean una inversa de la otra:
+  
+  \begin{lstlisting}
+   f1 :: (Int,Int -> Tree) -> (Int -> (Int,Tree))
+   
+   f2 :: (Int -> (Int,Tree)) -> (Int,Int -> Tree)
+  \end{lstlisting}
+
+  La primera de estas la podemos construir fácilmente, pero para la segunda encontramos un problema
+  ya que para obtener el primer elemento del par no sabríamos qué valor pasarle a la función argumento:
+    
+  \begin{lstlisting}
+   f1 :: (Int,Int -> Tree) -> (Int -> (Int,Tree))
+   f1 (i,f) = const i &&& f
+
+   f2 :: (Int -> (Int,Tree)) -> (Int,Int -> Tree)
+   f2 f = (??? , snd . f)
+  \end{lstlisting}
+
+  hay que seguir...
+ 
+  
+  
 
 % de los árboles binarias con el tipo $Tree$ constituyen el álgebra inicial, que consiste en
 % aplicar la función $Leaf$ si el elemento es un entero, y la función $Bin$ si 
@@ -137,6 +228,79 @@ dos veces:
 
 
 \subsection{Repmin con Attribute Grammars}
+
+  En la sección previa vimos cómo resolver el problema Repmin de una manera más eficiente realizando
+  una sola recorrida al árbol, gracias a la evaluación Lazy de Haskell. Para ello obteníamos
+  una tupla en donde el primer elemento era el mínimo de árbol y el segundo elemento una función
+  que dado un entero construye el árbol resultante de reemplazar los valores en las hojas por ese entero.
+  
+  Observemos que podríamos realizar el mismo procedimiento para cualquier tipo de dato recursivo, donde
+  la gramática no necesariamente conste de dos producciones. Podríamos definir el funtor $F$ 
+  y el catamorfismo correspondiente. Luego para calcular una semántica solo necesitamos tener una regla
+  para cada producción de la gramática.
+  
+  Con \textbf{Attribute Grammars} tenemos una notación sencilla para definir semántica definiendo la sintaxis
+  de un tipo de datos y luego dando reglas para cada producción de la gramática. Un preprocesador
+  convierte esta notación en código Haskell que es equivalente al que obtuvimos en la sección previa.
+  
+  El problema RepMin podemos resolverlo de esta manera con Attribute Grammars:
+  
+  \begin{lstlisting}
+   data Tree
+      | Leaf      Int
+      | Bin lt :: Tree
+	    rt :: Tree
+
+  deriving Tree : Show
+	  
+  attr Tree
+      inh minval :: Int
+      syn m      :: Int
+      syn res    :: Tree
+      
+  sem Tree
+      | Leaf lhs.m   = @int
+		.res = Leaf @lhs.minval
+      | Bin  lhs.m   = @lt.m `min` @rt.m
+		.res = Bin @lt.res @rt.res
+		
+  data Root
+      | Root Tree
+      
+      
+  attr Root
+      syn res :: Tree
+      
+  sem Root
+      | Root tree.minval = @tree.m
+  \end{lstlisting}
+
+  La definición de la gramática es similar a lo que definimos en Haskell, solo que ponemos nombres
+  a cada parámetro en cada producción. Para calcular semántica definimos atributos, los sintetizados ($syn$)
+  son aquellos que para calcular el valor en un nodo necesitamos saber el valor en los hijos, y los heredados ($inh$)
+  son pasados a través del árbol de arriba hacia abajo.
+  
+  En nuestro ejemplo necesitamos el valor mínimo del árbol para poder calcular el resultado a repmin y entonces definimos
+  un atributo heredado $minval$. El atributo sintetizado $m$ calcula el mínimo del árbol y con ese valor se inicializa
+  $minval$ que es utilizado luego para calcular el $res$.
+  
+  En el código mostrado se utilizan muchas abreviaciones que permiten escribir código más corto. Por ejemplo, si una regla
+  de producción en la gramática tiene un solo argumento, puede obviarse definir el nombre explícitamente y se genera uno
+  consistente del nombre del tipo de dato con la primera letra en minúscula. Si un atributo heredado no cambia el valor
+  al pasar al nodo hijo, entonces no es necesario definir esa regla trivial.
+  
+  El código generado utilizando \textbf{Attribute Grammars} calcula los valores de los atributos realizando el procedimiento
+  que mostramos en la sección previa. El tipo del álgebra resultante será una función donde los parámetros son los atributos
+  heredados y el resultado será una tupla donde cada elemento de la tupla es un atributo sintetizado.
+  
+  
+%   En general podemos tener muchos problemas donde necesitemos calcular algunos valores en una estructura de datos
+%   que luego tengan que ser utilizados para calcular otros valores, con estructuras recursivas más complicadas
+%   que los árboles binarios. Realizar todo el proceso que mostramos puede ser tedioso y propicio para cometer
+%   errores
+  
+  
+
 
 \section{El cálculo Lambda}
 
