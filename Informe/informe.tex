@@ -20,7 +20,7 @@
 \begin{document}
 \maketitle
 \lstset{ language=Haskell
-       , literate={λ}{{$\lambda$}}1
+       , literate={λ}{{$\lambda$}}1{→}{{$\rightarrow$}}1
 	   }
 
 \section{Sintaxis y semántica de Lenguajes}
@@ -344,10 +344,10 @@ es decir, se cometió un error al escribir el termino. Por lo tanto, un parser
 algo mas interesante podría ser uno tal que detecte este tipo de errores, los
 corrija e informe sobre tal decisión.\\
 
-Ahora bien, para la implementación del parser utilizamos la librería "uu-parsinglib"
-la cual provee exactamente una corrección de errores. Por ejemplo, siendo "pa"
-el parser de la letra "a", al intentar parsear "b" obtenemos "a" donde lo que
-sucedió fue el reemplazo de "b" por "a":\\
+Ahora bien, para la implementación del parser utilizamos la librería ``uu-parsinglib''
+la cual provee exactamente una corrección de errores. Por ejemplo, siendo ``pa''
+el parser de la letra ``a'', al intentar parsear ``b'' obtenemos "a" donde lo que
+sucedió fue el reemplazo de ``b'' por ``a'':\\
 
 \begin{code}
  >>> run pa  "b"
@@ -399,8 +399,8 @@ Para el caso de la abstracción, dejando de lado el parseo de los símbolos resp
 vamos a parsear una variable y se podría decir que la necesitamos para dos cosas;
 (1) el constructor de la abstracción, (2) la lista de variables posibles a parsear.
 Esto genera un problema, ya que al parsear la variable esta queda encapsulada 
-dentro de la computación "Parser Var", por (2) podemos pensar que el parser encargado
-de parsear el cuerpo de la abstracción tiene el siguiente tipo Var -> Parser Term,
+dentro de la computación ``Parser Var'', por (2) podemos pensar que el parser encargado
+de parsear el cuerpo de la abstracción tiene el siguiente tipo $Var -> Parser Term$,
 ya que toma la variable la añade a la lista de variables y parsea el termino.
 Si ahora prestamos atención necesitamos una función que convine, parsear la variable con
 parsear un termino agregando esa variable, es decir una función con tipo:
@@ -464,6 +464,119 @@ poder de corrección de la librería. Un ejemplo de esto podría ser,
 donde muy probablemente la corrección deseada hubiera sido simplemente reemplazar
 b por a, y generar el termino $\lambda$ a $\rightarrow$ a@a.
 
+\subsubsection{Pretty Printing}
+
+La implementación del pretty printing nos interesa como un primer pequeño paso
+hacía de definición de una función semántica para el tipo de dato $Term$ utilizando
+AG. En resumen, la semántica que estamos pensando trasformaría un $Term$, es decir
+un termino del calculo lambda, en su representación en $String$.\\
+
+A pesar de tener pocos constructores un termino del calculo lambda puede ser 
+complejo de leer y una ``organización'' de los subterminos a la hora de escribirlo
+puede ayudar mucho a la interpretación. Por ejemplo, el termino
+$(\lambda x \rightarrow x@x)@(\lambda x \rightarrow x@x)$ no genera problema pero en
+cambio si tenemos, 
+$(\lambda x \rightarrow
+	\lambda y \rightarrow
+		\lambda f \rightarrow f @ (x @ (\lambda w \rightarrow f @ w)) @ (y @ f @ x))$
+$@$
+$(\lambda x \rightarrow 
+	\lambda y \rightarrow \lambda f \rightarrow 
+	\lambda g \rightarrow \lambda h \rightarrow h @ (f @ x) @ (g @ y))$
+$@$ $\lambda x \rightarrow \lambda f \rightarrow 
+		\lambda g \rightarrow f @ g @ (x @ g)$
+puede ser difícil de leer. Por lo tanto una buena presentación del termino puede
+ayudar mucho. La utilización de la librería ``uulib'', en particular de ``UU.PPrint'', 
+nos brinda una manera de implementar un pretty printing de manera simple.\\
+
+Como vimos para el caso de Repmin, deberíamos definir atributos y dar reglas para
+cada constructor, esta vez para $Term$, que expresen como trasformar cada uno en
+su representación en $String$.\\
+
+Queremos un atributo sintetizado, que llamamos ``pprint'', que sea el resultado
+de transformar un $Term$ a un $String$ y un atributo heredado que necesitamos para
+saber cuando encerrar un termino entre paréntesis o no.
+
+\begin{lstlisting}
+attr Term 
+    syn pprint :: {Doc}
+    inh paren  :: {ParenInfo}
+\end{lstlisting}
+
+Por otro lado la semántica estará definida como,
+
+\begin{lstlisting}    
+sem Term
+\end{lstlisting}
+Para el identificador de variable será simplemente imprimir su nombre de variable
+recordando que estos estaban ya representados por $String$'s
+\begin{lstlisting}    
+    | Id  lhs.pprint  = text @ident
+\end{lstlisting}
+
+En el caso de la aplicación, comencemos explicando que imprimir una aplicación será
+simplemente imprimir su lado izquierdo (lt) y su lado derecho (rt) pero teniendo
+algunas consideraciones; En cuando a los paréntesis, la aplicación asocia a izquierda
+por lo tanto si tenemos, por ejemplo, la aplicación de $x@y$ y $z@w$ vamos a necesitar
+colocar paréntesis solamente en el lado derecho ($rt.paren = Paren$) para imprimir la
+correcta aplicación $x@y@(z@w)$. Pero además, hay un caso particular donde el lado
+izquierdo de la aplicación lleva paréntesis y ese es cuando en ese lado hay una
+abstracción, por ejemplo aplicando $\lambda x \rightarrow x$ y $z@w$. Por esto solamente
+colocamos paréntesis en un lado izquierdo si este es una abstracción ($lt.paren = ParenAbs$).
+Notar que sin los paréntesis las aplicaciones de los ejemplos quedarían $x@y@(z@w)$ y 
+$\lambda x \rightarrow x@z@w$ las cuales no son representaciones de los términos originales.\\
+
+Ahora bien, dejando de lado los paréntesis, para imprimir una aplicación la idea será
+intentar que tanto el lado izquierdo como el derecho estén en el mismo nivel y en caso
+de que esto no sea posible obtener lo siguiente,
+
+\begin{center}
+$lt$\\
+$@$\\
+$rt$
+\end{center}
+
+es decir, separar los subterminos en dos niveles intercalando el operador de aplicación.
+Con la posibilidad de ubicar el lado derecho en el mismo nivel del operador.
+
+\begin{lstlisting}    
+    | App lhs.pprint  = (putParen @lhs.paren) 
+                (group $ @lt.pprint <> line <> 
+                  (group $ text "@" <> line <> @rt.pprint)
+                )
+          rt.paren    = Paren
+          lt.paren    = ParenAbs
+\end{lstlisting}    
+
+Para terminar, nos falta definir la semántica para el caso del constructor de la
+abstracción. Para este caso la idea será si podemos escribir toda la abstracción
+en el mismo nivel lo hacemos, de no ser posible vamos a imprimir el cuerpo ($term$)
+en otro nivel con un cierto identado (3 caracteres) para ayudar a identificar el
+cuerpo de la abstracción cuando esta aplicada con un termino. Por otro lado, en el
+cuerpo nunca hace falta poner paréntesis ($term.paren = NoParen$).
+
+\begin{lstlisting}
+    | Abs lhs.pprint  = (putAbsParen @lhs.paren)
+                (text "λ " <> text @var <> text " →" <> 
+                    group (nest 3 $ line <> @term.pprint)
+                )
+          term.paren  = NoParen
+\end{lstlisting}
+
+Imprimiendo el ejemplo del comienzo podemos notar que es mucho mas sencillo de
+leer. En particular contiene muchas de las variantes de impresión posibles que
+implementa la semántica que dimos.
+
+\begin{verbatim}
+*Main> App (App t2 t3) t1
+(λ x →
+   λ y →
+      λ f → f @ (x @ (λ w → f @ w)) @ (y @ f @ x))
+@
+(λ x →
+   λ y → λ f → λ g → λ h → h @ (f @ x) @ (g @ y))
+@ (λ x → λ f → λ g → f @ g @ (x @ g))
+\end{verbatim}
 
 \subsection{Inferidor de tipos}
  
