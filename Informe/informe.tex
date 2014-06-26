@@ -1,6 +1,6 @@
 \documentclass[a4paper,10pt]{article}
 
-\usepackage[spanish]{babel}
+\usepackage[spanish,es-noquoting]{babel}
 \usepackage[utf8]{inputenx}
 \usepackage{booktabs}
 \usepackage{multirow}
@@ -8,11 +8,26 @@
 \usepackage{graphicx}
 \usepackage{listings}
 \usepackage{verbatim}
+\usepackage{diagrams}
 \newcommand{\here}{\checkmark}
 
 \newenvironment{code}{\footnotesize\verbatim}{\endverbatim\normalsize}
 \DeclareUnicodeCharacter{03BB}{$\lambda$}
 \DeclareUnicodeCharacter{2192}{$\rightarrow$}
+
+\usepackage{tikz}
+\usetikzlibrary{arrows}
+
+\tikzset{
+  treenode/.style = {align=center, inner sep=0pt, text centered,
+    font=\sffamily},
+  arn_n/.style = {treenode, circle, white, font=\sffamily\bfseries, draw=black,
+    fill=black, text width=1.5em},% arbre rouge noir, noeud noir
+  arn_r/.style = {treenode, circle, red, draw=red, 
+    text width=1.5em, very thick},% arbre rouge noir, noeud rouge
+  arn_x/.style = {treenode, rectangle, draw=black,
+    minimum width=0.5em, minimum height=0.5em}% arbre rouge noir, nil
+}
 
 \title{Implementación de Lenguajes: Attribute Grammars}
 \author{Alejandro Gadea \and Emmanuel Gunther}
@@ -31,11 +46,50 @@ El problema ``Rep Min'' es un ejemplo famoso del poder de la evaluación Lazy e 
 de la manera de definir semántica que explotan las Attribute Grammars.
 
 Consideremos el tipo de dato de los árboles binarios, con números enteros en las hojas. El problema
-consiste en reemplazar cada valor de las hojas del árbol por el valor mínimo:
+consiste en reemplazar cada valor de las hojas del árbol por el valor mínimo:\\
 
-\begin{center}
- \includegraphics[height=4cm]{./repmin.png}
-\end{center}
+
+\begin{minipage}{.37\textwidth}
+\begin{tikzpicture}[level/.style={sibling distance = 3cm/#1,
+  level distance = 0.7cm}] 
+\node [arn_n] {}
+    child{ node [arn_r] {4} }
+    child{ node [arn_n] {}
+            child{ node [arn_n] {} 
+							child{ node [arn_r] {3}}
+							child{ node [arn_r] {10}}
+            }
+            child{ node [arn_r] {4} }
+		}
+;
+\end{tikzpicture}
+\end{minipage}%
+\begin{minipage}{.18\textwidth}
+\begin{tikzpicture}
+\coordinate (a) at (0,0);
+\coordinate (b) at (2,0);
+\draw[-angle 90, red!40!white, line width=9pt](a) to node[black]{rep\_min} (b) ;
+\end{tikzpicture}
+\end{minipage}
+\begin{minipage}{.2\textwidth}
+\begin{tikzpicture}[level/.style={sibling distance = 3cm/#1,
+  level distance = 0.7cm}] 
+\node [arn_n] {}
+    child{ node [arn_r] {3} }
+    child{ node [arn_n] {}
+            child{ node [arn_n] {} 
+							child{ node [arn_r] {3}}
+							child{ node [arn_r] {3}}
+            }
+            child{ node [arn_r] {3} }
+		}
+;
+\end{tikzpicture}
+\end{minipage}
+
+\
+
+\
 
 Podríamos definir un tipo de dato en Haskell para representar un árbol binario
 de la siguiente manera:
@@ -82,12 +136,19 @@ semántica trivial y la podemos definir de la siguiente manera:
 Si pensamos en términos de categorías, podemos ver a $FTree$ como un funtor que transforma
 un objeto $A$ en un objeto $Int \sqcup (A\,x\,A)$ y entonces una $FTree-algebra$ será un morfismo
 $\alpha\,:\,FTree\;A\;\rightarrow\;A$. Si $\alpha$ es la FTree-álgebra inicial entonces para cualquier otra
-FTree-álgebra $\beta\,:\,FTree\;B\;\rightarrow\;B$ debe existir un único morfismo entre $\alpha$ y $\beta$, 
-es decir, una única $f$ tal que el siguiente diagrama conmuta:
+FTree-álgebra $\beta\,:\,FTree\;B\;\rightarrow\;B$ debe existir un único morfismo entre $\alpha$ y $\beta$, es decir, una única $f$ tal que el siguiente diagrama conmuta:
 
 \begin{center}
- \includegraphics[height=3cm]{./Falgebras.png}
+\begin{diagram}
+   FTree \ A & & \rTo^{\alpha} & & A \\
+   \dTo^{FTree \ f} & & & & \dTo_{f} & \\
+   FTree \ B & & \rTo^{\beta} & & B &
+\end{diagram}
 \end{center}
+
+\
+
+\
 
 Si queremos entonces dar semántica a los árboles binarios debemos encontrar el único morfismo
 entre $init\_algebra$ (el FTree-álgebra inicial) y otra FTree-álgebra. A este morfismo
