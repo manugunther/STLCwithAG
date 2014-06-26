@@ -640,5 +640,49 @@ implementa la semántica que dimos.
 \end{verbatim}
 
 \subsection{Inferidor de tipos}
- 
+
+\begin{center}
+\begin{diagram}[h=2em]
+	Abs \\
+	\dTo_{f}\\
+	Abs \ x \ (App \ f \ (App \ f \ x))
+\end{diagram}
+\end{center}
+
+\begin{center}
+\begin{diagram}[h=2em]
+	Abs \\
+	\dTo_{f}\\
+	Abs \\
+	\dTo_{x}\\
+	App \ f \ (App \ f \ x)
+\end{diagram}
+\end{center}
+
+\begin{center}
+\begin{diagram}[h=2em]
+	& Abs \\
+	& \dTo_{f}\\
+	& Abs \\
+	& \dTo_{x}\\
+	& App\\
+	\ldTo(1,2) & & \rdTo(1,2)\\
+	f & & App \ f \ x
+\end{diagram}
+\end{center}
+
+\begin{center}
+\begin{diagram}[h=2em]
+	& Abs \\
+	& \dTo_{f}\\
+	& Abs \\
+	& \dTo_{x}\\
+	& App\\
+	\ldTo(1,2) & & \rdTo(1,2)\\
+	f & & App\\
+    & \ldTo(1,2) & & \rdTo(1,2)\\
+	& f & & x
+\end{diagram}
+\end{center}
+
 \end{document}
