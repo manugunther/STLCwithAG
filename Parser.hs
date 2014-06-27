@@ -58,7 +58,7 @@ parseApp vars = (App <$ parseAppSym) `pChainl` (parseTerm' vars)
 
 parseAbs :: [Var] -> Parser Term
 parseAbs vars = 
-        addLength 1 $
+        addLength 0 $
         join $ uncurry (<$>) 
             <$> 
         (Abs &&& parseTerm . (:vars)) <$ parseLamSym <*> parseVar <* parseDotSym

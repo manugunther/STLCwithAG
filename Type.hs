@@ -23,14 +23,6 @@ showTVar :: TVar -> String
 showTVar 0 = stringTVar
 showTVar n = stringTVar ++ (show n)
 
--- instance PP Type where
---     pp = prettyp
---     
--- prettyp :: Type -> PP_Doc
--- prettyp (AtomType v)    = text (showTVar v)
--- prettyp (FunType t1 t2) = 
-    
-
 
 initTVar :: TVar
 initTVar = 0

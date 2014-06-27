@@ -9,6 +9,9 @@
 \usepackage{listings}
 \usepackage{verbatim}
 \usepackage{diagrams}
+\usepackage{proof}
+\usepackage{amsmath}
+\usepackage[all,color]{xy}
 \newcommand{\here}{\checkmark}
 
 \newenvironment{code}{\footnotesize\verbatim}{\endverbatim\normalsize}
@@ -28,6 +31,13 @@
   arn_x/.style = {treenode, rectangle, draw=black,
     minimum width=0.5em, minimum height=0.5em}% arbre rouge noir, nil
 }
+
+\newcommand{\typejud}[3] {
+  \ensuremath{#1 \vdash #2 : #3}
+}
+
+\newcommand{\df}[1]{\textcolor{gray}{\mathsf{#1}}}
+\newcommand{\dfH}[1]{\textcolor{blue}{\mathsf{#1}}}
 
 \title{Implementación de Lenguajes: Attribute Grammars}
 \author{Alejandro Gadea \and Emmanuel Gunther}
@@ -640,49 +650,197 @@ implementa la semántica que dimos.
 \end{verbatim}
 
 \subsection{Inferidor de tipos}
+ El objetivo principal de este trabajo es realizar un inferidor de tipos para el cálculo lambda con tipos simples. Recordemos
+ las reglas de tipado:
+ 
+ \begin{align*}
+ \infer[^{\mathtt{T-VAR}}]
+       {\typejud{\pi,(v:\theta)}{v}{\theta}}
+       {}
+ \end{align*}
+  \begin{align*}
+  \infer[^{\mathtt{T-APP}}]
+       {\typejud{\pi}{t_1\;t_2}{\theta_2}}
+       {\typejud{\pi}{t_1}{\theta_1\rightarrow\theta_2} &
+        \typejud{\pi}{t_2}{\theta_1}
+       }
+  \end{align*}
+  \begin{align*}
+  \infer[^{\mathtt{T-ABS}}]
+       {\typejud{\pi}{\lambda\,v.t}{\theta_1 \rightarrow \theta_2}}
+       {\typejud{\pi,(v:\theta_1)}{t}{\theta_2}
+       }
+  \end{align*}
+ 
+ En un contexto $\pi$ un término $t$ tendrá tipo $\theta$ si existe una derivación de
+ $\typejud{\pi}{t}{\theta}$ utilizando las reglas anteriores.
+ 
+ Para inferir el tipo de un término lo que podemos hacer es asumir que tiene un tipo $\theta$, e ir anotando
+ substituciones a ese tipo hasta obtener un juicio de tipado válido. Supongamos que tenemos el siguiente término:
+ 
+ \begin{align*}
+    \lambda\,x.x
+ \end{align*}
 
-\begin{center}
-\begin{diagram}[h=2em]
-	Abs \\
-	\dTo_{f}\\
-	Abs \ x \ (App \ f \ (App \ f \ x))
-\end{diagram}
-\end{center}
+  Asumimos que tiene tipo $\theta$, pero como es una abstracción la única regla con la que podemos construir un juicio
+  válido es $\mathtt{T-ABS}$ donde concluye que el tipo tiene que ser de la forma $\theta_1 \rightarrow \theta_2$, 
+  por lo tanto agregaríamos la substitución $\theta\,:=\,\theta_1 \rightarrow \theta_2$ y luego
+  intentamos construir el juicio de tipado $\typejud{\pi,(x:\theta_1)}{x}{\theta_2}$, como el término ahora
+  es una variable la única regla posible es $\mathtt{T-VAR}$ para lo cual necesitamos agregar
+  la substitución $\theta_1\,:=\,\theta_2$, y finalmente el tipo inferido es
+  
+  \begin{align*}
+   \typejud{\empty}{\lambda\,x.x}{\theta_2 \rightarrow \theta_2}
+  \end{align*}
 
-\begin{center}
-\begin{diagram}[h=2em]
-	Abs \\
-	\dTo_{f}\\
-	Abs \\
-	\dTo_{x}\\
-	App \ f \ (App \ f \ x)
-\end{diagram}
-\end{center}
+  Con esta idea realizaremos la inferencia de tipos utilizando Attribute Grammars. Definimos la gramática:
+  
+  \begin{lstlisting}
+   data Term
+	| Id  ident :: {Var}
+	| App lt,rt :: Term
+	| Abs var   :: {Var}
+	      term  :: Term
+  \end{lstlisting}
 
-\begin{center}
-\begin{diagram}[h=2em]
-	& Abs \\
-	& \dTo_{f}\\
-	& Abs \\
-	& \dTo_{x}\\
-	& App\\
-	\ldTo(1,2) & & \rdTo(1,2)\\
-	f & & App \ f \ x
-\end{diagram}
-\end{center}
+  Donde $Var$ está definido como $String$.
+  
+  Y los siguientes atributos:
+  
+  \begin{lstlisting}
+   attr Term 
+      inh ctx       :: {Ctx}
+      inh termType  :: {Type}
+      inh usedTVars :: {S.Set TVar}
+      syn tsubst    :: {TSubst}
+  \end{lstlisting}
 
-\begin{center}
-\begin{diagram}[h=2em]
-	& Abs \\
-	& \dTo_{f}\\
-	& Abs \\
-	& \dTo_{x}\\
-	& App\\
-	\ldTo(1,2) & & \rdTo(1,2)\\
-	f & & App\\
-    & \ldTo(1,2) & & \rdTo(1,2)\\
-	& f & & x
-\end{diagram}
-\end{center}
+  El resultado de la inferencia de tipos será una substitución a aplicar sobre el tipo inicial, y lo implementamos con 
+  un atributo sintetizado $\mathbf{tsubst}$. Como vimos en el ejemplo anterior, dado un término asumimos que tiene un 
+  tipo determinado, ese tipo asumido está implementado con un atributo sintetizado $\mathbf{termType}$. Tendremos
+  también un contexto de asignación de tipos a las variables con el atributo $\mathbf{ctx}$, y como necesitaremos generar
+  variables de tipos frescas cada vez que asumimos un nuevo tipo, llevamos cuenta de las variables de tipo ya usadas
+  con el atributo $\mathbf{usedTVars}$.
+  
+  Para ver el funcionamiento del algoritmo implementado con Attribute Grammars consideremos el siguiente término 
+  sobre el cual inferir el tipo:
+  
+ \begin{align*}
+    \lambda\,f.\lambda\,x.f\;(f\;x)
+ \end{align*}
 
+ \noindent que con la gramática definida quedaría representado por
+ \begin{lstlisting}
+  Abs "f" (Abs "x" (App (Id "f") (App (Id "f") (Id "x"))))
+ \end{lstlisting}
+ 
+ \noindent o en forma de árbol:
+ 
+  \begin{center}
+  \begin{diagram}[h=2em]
+	  & Abs \\
+	  & \dTo_{f}\\
+	  & Abs \\
+	  & \dTo_{x}\\
+	  & App\\
+	  \ldTo(1,2) & & \rdTo(1,2)\\
+	  f & & App\\
+      & \ldTo(1,2) & & \rdTo(1,2)\\
+	  & f & & x
+  \end{diagram}
+  \end{center}
+
+
+  El primer nodo de este árbol es una abstracción. Tenemos que definir entonces el valor de los atributos heredados en
+  el nodo hijo y calcular el atributo sintetizado en función del mismo.
+
+  \xymatrix @C=0.1pc @R=0.3pc{
+  & & & & & \ar@{-->}@/_-0.3pc/[dddd] & \ar[dddd]^{f} Abs & \ar@{<--}@/_0.3pc/[dddd] & & & & & & & & &\\
+  & & & \dfH{\pi = f:\theta_1} & & &  & & & & & & & & & &\\
+  & & & \dfH{t = \theta_2} & & &  & & \dfH{TS = \{\theta:=\theta_1 \rightarrow \theta_2\} \bigcup \,\{?\}}& & & & & & & &\\
+  & & & \dfH{UV = \{\theta,\theta_1,\theta_2\}} & & &  & & & & & & & & & &\\
+  & & & & &  &  Abs &  & & & & & & & & &\\\\
+  }
+  
+
+   Como el tipo que habíamos asumido para este término es $\theta$ tendremos que substituirlo por $\theta_1 \rightarrow \theta_2$
+   y entonces el contexto del subtérmino tendrá el par $f : \theta_1$, el tipo asumido será $\theta_2$ y agregamos a las variables
+   usadas $\theta_1$ y $\theta_2$. La substitución contendrá $\theta : \theta_1 \rightarrow \theta_2$ más la substitución del 
+   subtérmino. En los gráficos iremos completando la substitución a medida que calculamos los atributos de los subtérminos.
+   
+   
+   
+   En el siguiente paso, el nodo que analizamos es también una abstracción, por lo tanto repetimos el mismo procedimiento:
+   
+    \xymatrix @C=0.1pc @R=0.3pc{
+    & & & & & \ar@{-->}@/_-0.3pc/[dddd] & \ar[dddd]^{f} Abs & \ar@{<--}@/_0.3pc/[dddd] & & & & & & & & &\\
+    & & & \df{\pi = f:\theta_1} & & &  & & \dfH{TS = \{\theta:=\theta_1 \rightarrow \theta_3 \rightarrow \theta_4,} & & & & & & & &\\
+    & & & \df{t = \theta_2} & & &  & & \;\;\;\;\;\;\;\;\;\;\dfH{\theta_2 := \theta_3 \rightarrow \theta_4\} \bigcup\,\{?\}} & & & & & & & &\\
+    & & & \df{UV = \{\theta,\theta_1,\theta_2\}} & & &  & & & & & & & & & &\\
+    & & & & & \ar@{-->}@/_-0.3pc/[dddd] & \ar[dddd]^{x} Abs & \ar@{<--}@/_0.3pc/[dddd] & & & & & & & & &\\
+    & & & \dfH{\pi = f:\theta_1,\,x:\theta_3} & & &  & & & & & & & & & &\\
+    & & & \dfH{t = \theta_4} & & &  & & \dfH{TS = \{\theta_2:\theta_3 \rightarrow \theta_4\} \bigcup\,\{?\}} & & & & & & & &\\
+    & & & \dfH{UV = } & & &  & & & & & & & & & &\\
+    & & & & &  & App  & & & & & & & & & &\\\\
+    }
+
+  \noindent $\theta_2$ será substituido por $\theta_3 \rightarrow \theta_4$, al contexto le agregamos $x:\theta_3$ y agregamos
+  las nuevas variables a las usadas. El tipo que le asignamos al subtérmino es $\theta_4$. La substitución del nodo inicial
+  la actualizamos en el gráfico agregando la obtenida en este subtérmino, y al hacerlo realizamos el reemplazo 
+  $\theta_2 := \theta_3 \rightarrow \theta_4$, de esta manera aseguramos que las variables de tipo que ocurren al lado
+  izquierdo no ocurren al lado derecho de la substitución. También al hacer la unión realizamos unificación de tipos en
+  caso de ser necesaria.
+  \medskip
+  
+  El nodo que analizamos ahora es una aplicación, y según la regla de tipado si el tipo del término es $\theta_4$,
+  el subtérmino de la izquierda tendrá que tener un tipo $\theta_5 \rightarrow \theta_4$ y el derecho
+  $\theta_5$. Actualizamos los valores de los atributos de acuerdo a esa regla:
+  
+  \xymatrix @C=0.1pc @R=0.3pc{
+    & & & & & \ar@{-->}@/_-0.3pc/[dddd] & \ar[dddd]^{f} Abs & \ar@{<--}@/_0.3pc/[dddd] & & & & & & & & &\\
+    & & & \df{\pi = f:\theta_1} & & &  & & \df{TS = \{\theta:=\theta_1 \rightarrow \theta_3 \rightarrow \theta_4,} & & & & & & & &\\
+    & & & \df{t = \theta_2} & & &  & & \;\;\;\;\;\;\;\;\;\;\df{\theta_2 := \theta_3 \rightarrow \theta_4\} \bigcup\,\{?\}} & & & & & & & &\\
+    & & & \df{UV = \{\theta,\theta_1,\theta_2\}} & & &  & & & & & & & & & &\\
+    & & & & & \ar@{-->}@/_-0.3pc/[dddd] & \ar[dddd]^{x} Abs & \ar@{<--}@/_0.3pc/[dddd] & & & & & & & & &\\
+    & & & \df{\pi = f:\theta_1,\,x:\theta_3} & & &  & & & & & & & & & &\\
+    & & & \df{t = \theta_4} & & &  & & \df{TS = \{\theta_2:\theta_3 \rightarrow \theta_4\} \bigcup\,\{?\}} & & & & & & & &\\
+    & & & \df{UV = } & & &  & & & & & & & & & &\\
+  & & & & & \ar@{-->}@/_-0.3pc/[dddddlll]!<7ex,0ex> \ar@{-->}@/_0.7pc/[dddddrrr]!<-2ex,0ex> &
+											  \ar[dddddlll] App \ar[dddddrr] & 
+		    \ar@{<--}@/_-0.6pc/[dddddllll]!<2ex,0ex>
+		    \ar@{<--}@/_0.7pc/[dddddr]!<15ex,-10ex> & & & & & & & & &\\
+  & & & \dfH{\pi} & & & \dfH{\pi}  & & & & & & & & & &\\
+  & & & \dfH{t = \theta_5 \rightarrow \theta_4} & & & \dfH{t = \theta_5} & & \dfH{TS = ?} & & & & & & & &\\
+  & & & \dfH{UV = } & & &   & & & & & & & & & &\\
+  & & & & & &   & & & & & & & & & &\\
+  & & & f & & & & & App & & & & & & & &\\\\
+  }
+  
+  La substitución en una aplicación será la unión de las de los subtérminos, por eso todavía no la completamos
+  \medskip
+
+  Ahora tenemos dos términos que analizar. El izquierdo es el identificador con la variable $f$ y el tipo asumido es
+  $\theta_5 \rightarrow \theta_4$, pero en el contexto tenemos la información $f:\theta_1$ entonces agregamos
+  a la substitución $\theta_1 := \theta_5 \rightarrow \theta_4$. 
+  
+  En el término derecho de la aplicación tenemos otra aplicación con el tipo $\theta_5$, entonces realizamos el mismo
+  procedimiento:
+  
+    \begin{center}
+    gráfico
+   \end{center}
+   
+  Ahora tenemos de nuevo en el lado izquierdo el identificador $f$ y el tipo asumido es $\theta_6 \rightarrow \theta_5$,
+  y como en el contexto tenemos $f:\theta_1$ agregamos a la substitución $\theta_1 := \theta_6 \rightarrow \theta_5$.
+  
+  Al momento de concatenar las substituciones vemos que tenemos 
+  
+  
+  
+  
+   
 \end{document}
+
+
+
+
