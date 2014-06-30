@@ -110,11 +110,11 @@ putParen' NoParen = id
 putParen' _       = parens
 
 
-uncurryN :: (a -> b -> c -> d -> e -> f -> g) -> 
-            (a,b,c,d,e,f) -> g
-uncurryN fun (a,b,c,d,e,f) = fun a b c d e f
+uncurryN :: (a -> b -> c -> d -> g) -> 
+            (a,b,c,d) -> g
+uncurryN fun (a,b,c,d) = fun a b c d    
 
-inhValues = ([],initTVar,NoParen,[],undefined,initType)
+inhValues = ([],initTVar,NoParen,initType)
 
 
 
