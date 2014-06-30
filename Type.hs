@@ -4,6 +4,7 @@ import Data.List
 import UU.Pretty
 import qualified Data.Set as S
 
+-- Syntax for types:
 data Type = AtomType TVar | FunType Type Type
     deriving Eq
 
@@ -27,29 +28,23 @@ showTVar n = stringTVar ++ (show n)
 initTVar :: TVar
 initTVar = 0
 
--- Dado una lista de tipos, devuelve todas las TVar que ocurren
--- en los tipos, sin repeticiones
+-- Dado un tipo, devuelve todas las TVar que ocurren
 allTVars :: Type -> S.Set TVar
 allTVars (AtomType v)    = S.singleton v
 allTVars (FunType t1 t2) = (allTVars t1) `S.union` (allTVars t2)
     
 -- Genera una variable de tipo fresca para una lista de variables
-freshTVar :: S.Set TVar -> TVar
-freshTVar = freshTVar' 0
+freshTVar :: TVar -> TVar
+freshTVar = nextTVar
 
-freshTVar' :: Int -> S.Set TVar -> TVar
-freshTVar' i vs = if S.member i vs 
-                        then freshTVar' (i+1) vs
-                        else snew
-    where snew = i
-
-
+nextTVar :: TVar -> TVar
+nextTVar = (+1)
+    
 -- Dado un conjunto de variables, devuelve
 -- una substitución de variables por variables,
 -- donde las resultantes tendrán los menores coeficientes
 -- posibles
 getMinVars :: S.Set TVar -> [(TVar,TVar)]
-getMinVars s = zip l (ln (length l))
+getMinVars s = zip l [0..length l]
     where l = S.toAscList s
-          ln n = [0..n]
 

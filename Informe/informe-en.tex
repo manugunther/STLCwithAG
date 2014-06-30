@@ -55,8 +55,8 @@
 The ``Rep Min'' is a well known example of the power of Lazy Evaluation and inspires the way
 of define semantics that exploit the Attribute Grammars.
 
-Think about the data type of binary trees, with numbers in the leafs. The problem consist in
-replace each value in the leaf of the tree by the least value:\\
+Think about the data type of binary trees, with numbers in leaves. The problem consists in
+replace each value at leaves by the least value:\\
 
 \begin{minipage}{.37\textwidth}
 \begin{tikzpicture}[level/.style={sibling distance = 3cm/#1,
@@ -141,7 +141,7 @@ the trivial semantics that follows:
 Thinking in categories, we can see $FTree$ as a functor which transform an object $A$ in
 an object $Int \sqcup (A \times A)$ and then a FTree-algebra will be an arrow 
 $\alpha\,:\,FTree\;A \rightarrow A$. If $\alpha$ is the initial FTree-algebra, then for
-any other FTree-algebra $\beta\,:\,FTree\;B \rightarrow B$ must exist a unique arrow
+any other FTree-algebra $\beta\,:\,FTree\;B \rightarrow B$ must exist an unique arrow
 between $\alpha$ and $\beta$, i.e, a single $f$ such that the following diagram commutes:
 
 \begin{center}
@@ -158,7 +158,7 @@ between $\alpha$ and $\beta$, i.e, a single $f$ such that the following diagram 
 
 Thus, if we want to define a semantic for the binary trees we must find the single arrow
 between the $init\_algebra$ (the initial FTree-algebra) and other FTree-algebra. This arrow
-is called \textbf{catamorfismo}:
+is called \textbf{catamorfism}:
 
 \begin{lstlisting}
   cataTree :: FTreeAlgebra b -> Tree -> b
@@ -168,7 +168,7 @@ is called \textbf{catamorfismo}:
 \end{lstlisting}
 
 Returning to the problem that we want to solve, given a tree we want to transform it
-in a tree in which the value of the leafs is now the least value.
+in a tree in which the value of the leaves is now the least value.
 
 One first solution is, first get the least value of the tree and then replace it in
 all the leafs. This implies walk the initial tree two times.

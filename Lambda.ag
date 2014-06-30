@@ -1,41 +1,34 @@
 module {Lambda} {}
 {
 import Data.Maybe
-import qualified Data.Set as S
 import Type
 import TSubst
 import UU.PPrint
 
-type Env = [(Var,Type)]
 
+-- Utilities
+
+-- Variables
 type Var = String
 
-instance Show Term where
-    show = pprint 50
-    
-addEnv :: Var -> Type -> Env -> Maybe Env
-addEnv v t env = maybe (add v t env) (const Nothing) (lookup v env)
-    where add v t env = Just $ (v,t):env
-    
-    
--- Dado un environment y una lista de variables de tipo,
--- devuelve un tipo atómico con una variable fresca.
-freshType :: Env -> S.Set TVar -> Type
-freshType env vlist = 
-    AtomType $ freshTVar $ vlist `S.union` (S.unions (map allTVars (map snd env)))
-    
--- Tipo inicial
-initType = AtomType initTVar
+-- Context for assign types to variables
+type Ctx = [(Var,Type)]
 
--- Funcion principal, dado un término devuelve el tipo inferido
-getType :: Term -> Type
-getType t = 
-    let tsubst = changeType_Syn_Term (wrap_Term (sem_Term t)
-                                        (uncurryN Inh_Term inhValues))
-    in reduceIndexes (apply tsubst initType)
+-- Add a pair (Variable,Type) to context
+addCtx :: Var -> Type -> Ctx -> Maybe Ctx
+addCtx v t ctx = maybe (add v t ctx) (const Nothing) (lookup v ctx)
+    where add v t ctx = Just $ (v,t):ctx
     
+    
+-- From the maximum used TVar, get a fresh type:
+freshType :: TVar -> Type
+freshType  = AtomType . freshTVar
+    
+-- Initial Type
+initType = AtomType initTVar   
 }
 
+-- Abstract Syntax
 data Term
     | Id  ident :: {Var}
     | App lt,rt :: Term
@@ -44,18 +37,17 @@ data Term
           
 attr Term 
     -- Asignación de variables a tipos
-    inh envType       :: {Env}
-    -- Tipo de un término lambda
+    inh ctx       :: Ctx
+    -- Asummed type for a term
     inh termType      :: Type
-    -- Variables de tipo que se ya se usan, necesario para 
-    -- elegir variables frescas:
-    inh usedTVars     :: {S.Set TVar}
-    -- Sustitución de variables de tipo por tipo.
-    syn changeType    :: {TSubst}
+    -- max used TVar, needed for obtain fresh type variables
+    chn maxTVar     :: TVar
+    -- Type substitution
+    syn tsubst    :: TSubst
     
 sem Term
-    | Id loc.envInfo    = lookup @ident @lhs.envType
-         lhs.changeType = case @envInfo of
+    | Id loc.ctxInfo    = lookup @ident @lhs.ctx
+         lhs.tsubst = case @ctxInfo of
                             Just t@(AtomType v) -> if @lhs.termType == t
                                                     then []
                                                     else appendTS v @lhs.termType []
@@ -63,32 +55,27 @@ sem Term
                             
     | Abs loc.ntypel      = case @lhs.termType of
                              FunType t1 _ -> t1
-                             AtomType v   -> freshType @lhs.envType 
-                                                (v `S.insert` (@lhs.usedTVars))
+                             AtomType v   -> freshType @lhs.maxTVar
           loc.ntyper      = case @lhs.termType of
                              FunType _ t2 -> t2
-                             AtomType v   -> freshType @lhs.envType 
-                                            ((v `S.insert` (allTVars @ntypel))
-                                                `S.union` (@lhs.usedTVars))
-          loc.menv        = addEnv @var @ntypel @lhs.envType
-          term.envType    = maybe (error "Captura de variable") id @menv
-              .termType  = @ntyper
-              .usedTVars = @lhs.usedTVars `S.union` (allTVars (@lhs.termType))
-          lhs.changeType = case @lhs.termType of
-                              FunType _ _ -> @term.changeType
-                              AtomType v  -> appendTS v (FunType @ntypel @ntyper) 
-                                                    @term.changeType 
+                             AtomType v   -> freshType (nextTVar @lhs.maxTVar)
+          loc.mctx        = addCtx @var @ntypel @lhs.ctx
+          term.ctx        = maybe (error "Captura de variable") id @mctx
+              .termType   = @ntyper
+              .maxTVar    = case @lhs.termType of
+                             FunType _ _ -> @lhs.maxTVar
+                             AtomType _  -> nextTVar (nextTVar @lhs.maxTVar)
+          lhs.tsubst      = case @lhs.termType of
+                                FunType _ _ -> @term.tsubst
+                                AtomType v  -> appendTS v (FunType @ntypel @ntyper) 
+                                                          @term.tsubst 
                                                     
-    | App loc.ntype      = freshType @lhs.envType ((allTVars (@lhs.termType))
-                                                    `S.union`(@lhs.usedTVars))
+    | App loc.ntype      = freshType @lhs.maxTVar 
           lt.termType    = FunType @ntype @lhs.termType
-            .usedTVars   = @lhs.usedTVars `S.union` (allTVars (@lhs.termType))
-          loc.lusedTVars = S.unions (map (\(v,t2) -> v `S.insert` (allTVars t2)) 
-                                        @lt.changeType)
+            .maxTVar     = nextTVar @lhs.maxTVar
           rt.termType    = @ntype
-            .usedTVars   = S.unions [@lhs.usedTVars,@lusedTVars,
-                                        allTVars (@lhs.termType)]
-          lhs.changeType = concatTSubst @lt.changeType @rt.changeType
+            .maxTVar     = nextTVar @lt.maxTVar
+          lhs.tsubst = concatTSubst @lt.tsubst @rt.tsubst
 
 
           
@@ -127,99 +114,25 @@ uncurryN :: (a -> b -> c -> d -> e -> f -> g) ->
             (a,b,c,d,e,f) -> g
 uncurryN fun (a,b,c,d,e,f) = fun a b c d e f
 
-inhValues = ([],NoParen,[],undefined,initType,(S.singleton initTVar))
+inhValues = ([],initTVar,NoParen,[],undefined,initType)
+
+
+
 
 pprint :: Int -> Term -> String
 pprint n t = 
     let pdoc = pprint_Syn_Term (wrap_Term (sem_Term t)
                                         (uncurryN Inh_Term inhValues))
     in displayS (renderPretty 1 n pdoc) $ ""
+    
+instance Show Term where
+    show = pprint 50
+    
+-- Main function for type inference. From a term returns the type.
+getType :: Term -> Type
+getType t = 
+    let tsubst = tsubst_Syn_Term (wrap_Term (sem_Term t)
+                                        (uncurryN Inh_Term inhValues))
+    in reduceIndexes (apply tsubst initType)
 }
     
--- SubTerminos
-
-{
-data PosIndex = LTerm | RTerm | AbsTerm
-
-type Position = [PosIndex]
-}
-
--- Substitucion de un término por otro
-attr Term
-    -- posicion del subtermino
-    inh pos        :: {Position}
-    -- subtermino en la posicion
-    syn sterm      :: {Maybe Term}
-    -- copia
-    syn copy       :: self
-
-sem Term
-    | Id lhs.sterm  = if null (@lhs.pos)
-                        then Just $ Id @ident
-                        else Nothing
-    | App lhs.sterm = if null (@lhs.pos)
-                        then Just $ App @lt.copy @rt.copy
-                        else case head @lhs.pos of
-                                LTerm -> @lt.sterm
-                                RTerm -> @rt.sterm
-                                _     -> Nothing
-          lt.pos    = drop 1 @lhs.pos
-          rt.pos    = drop 1 @lhs.pos
-    | Abs lhs.sterm = if null (@lhs.pos)
-                        then Just $ Abs @var @term.copy
-                        else case head @lhs.pos of
-                                AbsTerm -> @term.sterm
-                                _     -> Nothing
-          term.pos  = drop 1 @lhs.pos
-    
-{
-ifnonEmpty :: Position -> (PosIndex -> Maybe a) -> Maybe a
-ifnonEmpty [] _     = Nothing
-ifnonEmpty (p:ps) f = f p
-
-intToPIndex :: Int -> PosIndex
-intToPIndex 0 = AbsTerm
-intToPIndex 1 = LTerm
-intToPIndex 2 = RTerm
-intToPIndex _ = error "Posición no válida"
-
-translatePos :: [Int] -> Position
-translatePos = map intToPIndex
-
--- Funcion principal, dado un término devuelve el tipo inferido
-subTerm :: Term -> Position -> Maybe Term
-subTerm t pos = sterm_Syn_Term (wrap_Term (sem_Term t) inh)
-    where inh = Inh_Term [] NoParen pos undefined initType (S.singleton initTVar)
-}
-
--- Substitucion
-
-attr Term
-    -- substitucion
-    inh subst    :: {(Var,Term)}
-    syn substres :: Term
-    
-    
-sem Term
-    | Id lhs.substres  = if (fst @lhs.subst == @ident)
-                            then snd @lhs.subst
-                            else Id @ident
-    | App lhs.substres = App @lt.substres @rt.substres
-    -- Cuando substituimos en una abstraccion, si la variable
-    -- a substituir es la ligada, no hacemos nada. Asumimos convención
-    -- de Barendrget (por ahora)
-    | Abs lhs.substres = if (fst @lhs.subst == @var)
-                            then Abs @var @term.copy
-                            else Abs @var @term.substres
-
-                            
-
-
--- Reducción de un β-Redex
-
-{
--- betaReduction :: Term -> Position -> Maybe Term
--- betaReduction
-
-}
-
