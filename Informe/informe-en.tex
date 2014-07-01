@@ -735,14 +735,9 @@ particular contains many of the print cases that the semantics we give implement
   El primer nodo de este árbol es una abstracción. Tenemos que definir entonces el valor de los atributos heredados en
   el nodo hijo y calcular el atributo sintetizado en función del mismo.
 
-  \xymatrix @C=0.1pc @R=0.3pc{
-  & & & & & \ar@{-->}@/_-0.3pc/[dddd] & \ar[dddd]^{f} Abs & \ar@{<--}@/_0.3pc/[dddd] & & & & & & & & &\\
-  & & & \dfH{\pi_f = f:\theta_1} & & &  & & & & & & & & & &\\
-  & & & \dfH{t = \theta_2} & & &  & & \dfH{TS = \{\theta_0:=\theta_1 \rightarrow \theta_2\} \bigcup \,\{?\}}& & & & & & & &\\
-  & & & & & &  & & & & & & & & & &\\
-  & & & & &  &  Abs &  & & & & & & & & &\\\\
-  }
-  
+\begin{center}
+\includegraphics[height=4cm]{./primero.pdf}
+\end{center}
 
    Como el tipo que habíamos asumido para este término es $\theta$ tendremos que substituirlo por $\theta_1 \rightarrow \theta_2$
    y entonces el contexto del subtérmino tendrá el par $f : \theta_1$, el tipo asumido será $\theta_2$ y agregamos a las variables
@@ -753,19 +748,9 @@ particular contains many of the print cases that the semantics we give implement
    
    En el siguiente paso, el nodo que analizamos es también una abstracción, por lo tanto repetimos el mismo procedimiento:
    
-    \xymatrix @C=0.1pc @R=0.3pc{
-    & & & & & \ar@{-->}@/_-0.3pc/[dddd] & \ar[dddd]^{f} Abs & \ar@{<--}@/_0.3pc/[dddd] & & & & & & & & &\\
-    & & & \df{\pi_f = f:\theta_1} & & &  & & 
-    		\dfH{TS = \{\theta_0:=\theta_1 \rightarrow \theta_3 \rightarrow \theta_4,} & & & & & & & &\\
-    & & & \df{t = \theta_2} & & &  & & \;\;\;\;\;\;\;\;\;\;
-    		\dfH{\theta_2 := \theta_3 \rightarrow \theta_4\} \bigcup\,\{?\}} & & & & & & & &\\
-    & & & & & &  & & & & & & & & & &\\
-    & & & & & \ar@{-->}@/_-0.3pc/[dddd] & \ar[dddd]^{x} Abs & \ar@{<--}@/_0.3pc/[dddd] & & & & & & & & &\\
-    & & & \dfH{\pi_{f,x} = \pi_f,\,x:\theta_3} & & &  & & & & & & & & & &\\
-    & & & \dfH{t = \theta_4} & & &  & & \dfH{TS = \{\theta_2:\theta_3 \rightarrow \theta_4\} \bigcup\,\{?\}} & & & & & & & &\\
-    & & & & & &  & & & & & & & & & &\\
-    & & & & &  & App  & & & & & & & & & &\\\\
-    }
+\begin{center}
+\includegraphics[height=8cm]{./segundo.pdf}
+\end{center}
 
   \noindent $\theta_2$ será substituido por $\theta_3 \rightarrow \theta_4$, al contexto le agregamos $x:\theta_3$ y agregamos
   las nuevas variables a las usadas. El tipo que le asignamos al subtérmino es $\theta_4$. La substitución del nodo inicial
@@ -779,26 +764,10 @@ particular contains many of the print cases that the semantics we give implement
   el subtérmino de la izquierda tendrá que tener un tipo $\theta_5 \rightarrow \theta_4$ y el derecho
   $\theta_5$. Actualizamos los valores de los atributos de acuerdo a esa regla:
   
-  \xymatrix @C=0.1pc @R=0.3pc{
-    & & & & & \ar@{-->}@/_-0.3pc/[dddd] & \ar[dddd]^{f} Abs & \ar@{<--}@/_0.3pc/[dddd] & & & & & & & & &\\
-    & & & \df{\pi_f = f:\theta_1} & & &  & & \df{TS = \{\theta_0	:=\theta_1 \rightarrow \theta_3 \rightarrow \theta_4,} & & & & & & & &\\
-    & & & \df{t = \theta_2} & & &  & & \;\;\;\;\;\;\;\;\;\;\df{\theta_2 := \theta_3 \rightarrow \theta_4\} \bigcup\,\{?\}} & & & & & & & &\\
-    & & & & & &  & & & & & & & & & &\\
-    & & & & & \ar@{-->}@/_-0.3pc/[dddd] & \ar[dddd]^{x} Abs & \ar@{<--}@/_0.3pc/[dddd] & & & & & & & & &\\
-    & & & \df{\pi_{f,x} = \pi_f,\,x:\theta_3} & & &  & & & & & & & & & &\\
-    & & & \df{t = \theta_4} & & &  & & \df{TS = \{\theta_2:\theta_3 \rightarrow \theta_4\} \bigcup\,\{?\}} & & & & & & & &\\
-    & & &  & & &  & & & & & & & & & &\\
-  & & & & & \ar@{-->}@/_-0.3pc/[dddddlll]!<7ex,0ex> \ar@{-->}@/_0.7pc/[dddddrrr]!<-2ex,0ex> &
-											  \ar[dddddlll] App \ar[dddddrr] & 
-		    \ar@{<--}@/_-0.6pc/[dddddllll]!<2ex,0ex>
-		    \ar@{<--}@/_0.7pc/[dddddr]!<15ex,-10ex> & & & & & & & & &\\
-  & & & \dfH{\pi_{f,x}} & & & \dfH{\pi_{f,x}}  & & & & & & & & & &\\
-  & & & \dfH{t = \theta_5 \rightarrow \theta_4} & & & \dfH{t = \theta_5} & & \dfH{TS = ?} & & & & & & & &\\
-  & & & & & &   & & & & & & & & & &\\
-  & & & & & &   & & & & & & & & & &\\
-  & & & f & & &   & & App & & & & & & & &\\
-  }
-  
+  \begin{center}
+\includegraphics[height=10cm]{./tercero.pdf}
+\end{center}
+
   La substitución en una aplicación será la unión de las de los subtérminos, por eso todavía no la completamos
   \medskip
 
@@ -809,41 +778,9 @@ particular contains many of the print cases that the semantics we give implement
   En el término derecho de la aplicación tenemos otra aplicación con el tipo $\theta_5$, entonces realizamos el mismo
   procedimiento:
   
-      \xymatrix @C=0.1pc @R=0.3pc{
-    & & & & & \ar@{-->}@/_-0.3pc/[dddd] & \ar[dddd]^{f} Abs & \ar@{<--}@/_0.3pc/[dddd] & & & & & & & & &\\
-    & & & \df{\pi_f = f:\theta_1} & & &  & & \df{TS = \{\theta_0	:=\theta_1 \rightarrow \theta_3 \rightarrow \theta_4,} & & & & & & & &\\
-    & & & \df{t = \theta_2} & & &  & & \;\;\;\;\;\;\;\;\;\;\df{\theta_2 := \theta_3 \rightarrow \theta_4\} \bigcup\,\{?\}} & & & & & & & &\\
-    & & & & & &  & & & & & & & & & &\\
-    & & & & & \ar@{-->}@/_-0.3pc/[dddd] & \ar[dddd]^{x} Abs & \ar@{<--}@/_0.3pc/[dddd] & & & & & & & & &\\
-    & & & \df{\pi_{f,x} = \pi_f,\,x:\theta_3} & & &  & & & & & & & & & &\\
-    & & & \df{t = \theta_4} & & &  & & 
-    	  \df{TS = \{\theta_2:=\theta_3 \rightarrow \theta_4,} & & & & & & & &\\
-    & & & & & &  & & 
-    	  \;\;\;\;\;\;\;\;\;\;\;\;\df{\theta_1:=\theta_5 \rightarrow \theta_6,}& & & & & & & &\\
-  & & & & & \ar@{-->}@/_-0.3pc/[dddddlll]!<7ex,0ex> \ar@{-->}@/_0.7pc/[dddddrrr]!<-2ex,0ex> &
-											  \ar[dddddlll] App \ar[dddddrr] & 
-		    \ar@{<--}@/_-0.6pc/[dddddllll]!<2ex,0ex>
-		    \ar@{<--}@/_0.7pc/[dddddr]!<15ex,-10ex> &
-		    \df{\theta_5:=\theta_6, \theta_4	:=\theta_5, \theta_3:=\theta_6\}} & & & & & & & &\\
-  & & & \df{\pi_{f,x}} & & & \df{\pi_{f,x}}  & & & & & & & & & &\\
-  & & & \df{t = \theta_5 \rightarrow \theta_4} & & & \df{t = \theta_5} & &
-  		\df{TS = \{\theta_1:\theta_6 \rightarrow \theta_5, \theta_3:\theta_6\}} & & & & & & & &\\
-  & & & & & &   \df{TS = \{\theta_1:\theta_5 \rightarrow \theta_4\}} & & & & & & & & & &\\
-  & & & & & &   & & & & & & & & & &\\
-& & & f & & &   & & \ar@{-->}@/_1.4pc/[ddddd]!<-20ex,-10ex>
-					\ar@{-->}@/_1.4pc/[dddddrr]
-					\ar[dddddl] App \ar[dddddrr]
-					\ar@{<--}@/_-1pc/[dddddrr]!<2ex,0ex>
-					\ar@{<--}@/_-1pc/[dddddl]!<1ex,1ex>
-					& & & & & & & &\\
-& & & & & & \dfH{\pi_{f,x}} & & \dfH{\pi_{f,x}} & & & & & & & & \\
-& & & & & & \dfH{t = \theta_6 \rightarrow \theta_5} 
-			& & \dfH{t = \theta_6} & & & 
-			\dfH{TS = \{\theta_3:\theta_6\}} & & & & & \\
-& & & & & & & & \dfH{TS = \{\theta_1:\theta_6 \rightarrow \theta_5\}} &   & & & & & & & \\
-& & & & & &   & & & & & & & & & &\\
-& & & & & &   & f & & & x & & & & & &\\
-}
+\begin{center}
+\includegraphics[height=10cm]{./cuarto.pdf}
+\end{center}
    
   Ahora tenemos de nuevo en el lado izquierdo el identificador $f$ y el tipo asumido es $\theta_6 \rightarrow \theta_5$,
   y como en el contexto tenemos $f:\theta_1$ agregamos a la substitución $\theta_1 := \theta_6 \rightarrow \theta_5$.
