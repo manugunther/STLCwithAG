@@ -2,7 +2,6 @@ module {Lambda} {}
 {
 import Data.Maybe
 import Type
-import TSubst
 import UU.PPrint
 
 
@@ -50,7 +49,7 @@ sem Term
          lhs.tsubst = case @ctxInfo of
                             Just t@(AtomType v) -> if @lhs.termType == t
                                                     then []
-                                                    else addTS v @lhs.termType []
+                                                    else concatTS [] [(v,@lhs.termType)]
                             Nothing -> error ("Not in scope: "++(@ident))
                             
     | Abs loc.ntypel      = case @lhs.termType of
@@ -135,4 +134,3 @@ getType t =
                                         (uncurryN Inh_Term inhValues))
     in reduceIndexes (apply tsubst initType)
 }
-    
