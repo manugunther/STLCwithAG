@@ -768,13 +768,9 @@ to read. In particular, it contains many of the print cases that the semantics w
   to calculate the syntesized attribute in function of it.
   
 
-  \xymatrix @C=0.1pc @R=0.3pc{
-  & & & & & \ar@{-->}@/_-0.3pc/[dddd] & \ar[dddd]^{f} Abs & \ar@{<--}@/_0.3pc/[dddd] & & & & & & & & &\\
-  & & & \dfH{\pi = f:\theta_1} & & &  & & & & & & & & & &\\
-  & & & \dfH{t = \theta_2} & & &  & & \dfH{TS = \{\theta:=\theta_1 \rightarrow \theta_2\} \bigcup \,\{?\}}& & & & & & & &\\
-  & & & \dfH{UV = \{\theta,\theta_1,\theta_2\}} & & &  & & & & & & & & & &\\
-  & & & & &  &  Abs &  & & & & & & & & &\\\\
-  }
+  \begin{center}
+	\includegraphics[height=4cm]{primero.pdf}
+  \end{center}
   
   As we assume for this term the type $\theta$, we must to replace by $\theta_1 \rightarrow \theta_2$ and
   we define the values of the inherited attributes: the context will contain the pair $f:\theta_1$ and
@@ -785,17 +781,9 @@ to read. In particular, it contains many of the print cases that the semantics w
   
   In next step, the node is an abstraction too, so we perform the same procedure:
    
-    \xymatrix @C=0.1pc @R=0.3pc{
-    & & & & & \ar@{-->}@/_-0.3pc/[dddd] & \ar[dddd]^{f} Abs & \ar@{<--}@/_0.3pc/[dddd] & & & & & & & & &\\
-    & & & \df{\pi = f:\theta_1} & & &  & & \dfH{TS = \{\theta:=\theta_1 \rightarrow \theta_3 \rightarrow \theta_4,} & & & & & & & &\\
-    & & & \df{t = \theta_2} & & &  & & \;\;\;\;\;\;\;\;\;\;\dfH{\theta_2 := \theta_3 \rightarrow \theta_4\} \bigcup\,\{?\}} & & & & & & & &\\
-    & & & \df{UV = \{\theta,\theta_1,\theta_2\}} & & &  & & & & & & & & & &\\
-    & & & & & \ar@{-->}@/_-0.3pc/[dddd] & \ar[dddd]^{x} Abs & \ar@{<--}@/_0.3pc/[dddd] & & & & & & & & &\\
-    & & & \dfH{\pi = f:\theta_1,\,x:\theta_3} & & &  & & & & & & & & & &\\
-    & & & \dfH{t = \theta_4} & & &  & & \dfH{TS = \{\theta_2:\theta_3 \rightarrow \theta_4\} \bigcup\,\{?\}} & & & & & & & &\\
-    & & & \dfH{UV = } & & &  & & & & & & & & & &\\
-    & & & & &  & App  & & & & & & & & & &\\\\
-    }
+  \begin{center}
+	\includegraphics[height=7cm]{segundo.pdf}
+  \end{center}
 
   \noindent $\theta_2$ will be replaced by $\theta_3 \rightarrow \theta_4$, we add to context $x:\theta_3$ and
   the type asummed to the subterm is $\theta_4$. We update the substitution on initial node adding the obtained
@@ -808,25 +796,9 @@ to read. In particular, it contains many of the print cases that the semantics w
   the left subterm has to have a type $\theta_5 \rightarrow \theta_4$ and the right subterm $\theta_5$.
   We update the values:
   
-  \xymatrix @C=0.1pc @R=0.3pc{
-    & & & & & \ar@{-->}@/_-0.3pc/[dddd] & \ar[dddd]^{f} Abs & \ar@{<--}@/_0.3pc/[dddd] & & & & & & & & &\\
-    & & & \df{\pi = f:\theta_1} & & &  & & \df{TS = \{\theta:=\theta_1 \rightarrow \theta_3 \rightarrow \theta_4,} & & & & & & & &\\
-    & & & \df{t = \theta_2} & & &  & & \;\;\;\;\;\;\;\;\;\;\df{\theta_2 := \theta_3 \rightarrow \theta_4\} \bigcup\,\{?\}} & & & & & & & &\\
-    & & & \df{UV = \{\theta,\theta_1,\theta_2\}} & & &  & & & & & & & & & &\\
-    & & & & & \ar@{-->}@/_-0.3pc/[dddd] & \ar[dddd]^{x} Abs & \ar@{<--}@/_0.3pc/[dddd] & & & & & & & & &\\
-    & & & \df{\pi = f:\theta_1,\,x:\theta_3} & & &  & & & & & & & & & &\\
-    & & & \df{t = \theta_4} & & &  & & \df{TS = \{\theta_2:\theta_3 \rightarrow \theta_4\} \bigcup\,\{?\}} & & & & & & & &\\
-    & & & \df{UV = } & & &  & & & & & & & & & &\\
-  & & & & & \ar@{-->}@/_-0.3pc/[dddddlll]!<7ex,0ex> \ar@{-->}@/_0.7pc/[dddddrrr]!<-2ex,0ex> &
-											  \ar[dddddlll] App \ar[dddddrr] & 
-		    \ar@{<--}@/_-0.6pc/[dddddllll]!<2ex,0ex>
-		    \ar@{<--}@/_0.7pc/[dddddr]!<15ex,-10ex> & & & & & & & & &\\
-  & & & \dfH{\pi} & & & \dfH{\pi}  & & & & & & & & & &\\
-  & & & \dfH{t = \theta_5 \rightarrow \theta_4} & & & \dfH{t = \theta_5} & & \dfH{TS = ?} & & & & & & & &\\
-  & & & \dfH{UV = } & & &   & & & & & & & & & &\\
-  & & & & & &   & & & & & & & & & &\\
-  & & & f & & & & & App & & & & & & & &\\\\
-  }
+  \begin{center}
+	\includegraphics[height=10cm]{tercero.pdf}
+  \end{center}
   
   The substitution on an application will be the union of the substitutions in subterms, so we don't complete this
   yet.
@@ -838,7 +810,7 @@ to read. In particular, it contains many of the print cases that the semantics w
   The right term is another application with type $\theta_5$, so we realize the same procedure:
   
   \begin{center}
-   gráfico
+	\includegraphics[height=10cm]{cuarto.pdf}
   \end{center}
    
   Ahora tenemos de nuevo en el lado izquierdo el identificador $f$ y el tipo asumido es $\theta_6 \rightarrow \theta_5$,
