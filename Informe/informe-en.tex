@@ -53,7 +53,7 @@
 \subsection{The RepMin problem}
 
 The ``Rep Min'' is a well known example of the expressiveness of Lazy Evaluation and
-inspires the way to define the semantics that exploit the Attribute Grammars.
+inspires the way to define the semantics that exploits the Attribute Grammar Framework.
 
 Think about the data type of binary trees, with numbers in the leaves. The problem
 consists in replacing each value at each leaf by the least value in the whole tree:\\
@@ -108,8 +108,8 @@ We can define a data type in Haskell for representing a binary tree in the follo
 \end{lstlisting}
 
 A tree can be built from an integer (a leaf) or from others two subtrees, i.e we
-can think of an element of $Tree$ as an element of the disjoint union of 
-$Int \sqcup (Tree\,\times\,Tree)$. This disjoint union can be defined for any
+can think of an element of $Tree$ as an element of the disjoint union  
+$Int \uplus (Tree\,\times\,Tree)$. This disjoint union can be defined for any
 type $a$:
 
 \begin{lstlisting}
@@ -131,7 +131,7 @@ define a $\mathbf{FTreeAlgebra}\;B$. This is, we should give a rule in the case 
 an integer and another in the case of having a pair in $B \times B$, which one should think
 as the semantic value of the subtrees.
 
-The syntactic representation of binary trees with type $Tree$ can be seen as
+The syntactic representation of binary trees with type $Tree$ can be seen as the
 trivial semantic and we can define the next algebra:
 
 \begin{lstlisting}
@@ -252,7 +252,7 @@ getIsoAlg fab fba fa = either (fab . fa . Left)
                                  (fab . fa . Right . (fba *** fba))
 \end{lstlisting}
 
-In our problem we have a FTree-algebra of type
+\noindent In our problem we have a FTree-algebra of type
   
 \begin{lstlisting}
    (Int,Int -> Tree)
@@ -264,7 +264,7 @@ In our problem we have a FTree-algebra of type
   Int -> (Int,Tree)
 \end{lstlisting} 
 
-We need define two functions to exchange those types:
+\noindent We need define two functions to exchange those types:
   
 \begin{lstlisting}
 f1 :: (Int,Int -> Tree) -> (Int -> (Int,Tree))
@@ -272,7 +272,7 @@ f1 :: (Int,Int -> Tree) -> (Int -> (Int,Tree))
 f2 :: (Int -> (Int,Tree)) -> (Int,Int -> Tree)
 \end{lstlisting}
 
-We can construct the first of these easily, but it's not the case for the second one:
+\noindent We can construct the first of these easily, but it's not the case for the second one:
 
 \begin{lstlisting}
 f1 :: (Int,Int -> Tree) -> (Int -> (Int,Tree))
@@ -353,7 +353,8 @@ sem Tree
 data Root
 	| Root Tree
       
-      
+    
+
 attr Root
 	syn res :: Tree
       
