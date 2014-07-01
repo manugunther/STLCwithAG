@@ -1,6 +1,18 @@
-import Lambda
+module Examples where
 
+import Lambda
 import Parser
+
+examples :: [Term]
+examples = [ identity
+           --, first, second
+           --, application
+           --, twice, thrice
+           --, comp
+           --, delta
+           --, ycomb
+           , t1, t2, t2', t3
+           ]
 
 -- Examples
 
@@ -14,7 +26,7 @@ first = Abs "x" (Abs "y" (Id "x"))
 second = Abs "x" (Abs "y" (Id "x"))
 
 -- \f x -> f x
-appication = Abs "f" (Abs "x" (App (Id "f") (Id "x")))
+application = Abs "f" (Abs "x" (App (Id "f") (Id "x")))
 
 -- \f x -> f (f x)
 twice = Abs "f" (Abs "x" (App (Id "f") (App (Id "f") (Id "x"))))

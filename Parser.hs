@@ -1,6 +1,6 @@
 {-# Language FlexibleContexts, RankNTypes #-}
 {-# Language ImpredicativeTypes, NoMonomorphismRestriction #-}
-module Parser ( parserTerm ) where
+module Parser ( parserTerm, ParseError ) where
 
 import Text.ParserCombinators.UU
 import Text.ParserCombinators.UU.Utils
@@ -12,6 +12,8 @@ import Control.Applicative
 import Data.ListLike (ListLike)
 
 import Lambda
+
+type ParseError = [Error LineColPos]
 
 extraLamSyms :: [String]
 extraLamSyms  = ["λ"]
@@ -71,10 +73,10 @@ parseTerm' vars =  parseId vars
 parseTerm :: [Var] -> Parser Term
 parseTerm vars = parseApp vars
 
-parseFromStringTerm :: [Var] -> String -> ([Term],[Error LineColPos])
+parseFromStringTerm :: [Var] -> String -> ([Term],ParseError)
 parseFromStringTerm vars = parse ((,) <$> amb (parseTerm vars) <*> pEnd)
                            .
                            (createStr (LineColPos 0 0 0))
 
-parserTerm :: String -> (Term,[Error LineColPos])
+parserTerm :: String -> (Term,ParseError)
 parserTerm = (head *** id) . parseFromStringTerm []
