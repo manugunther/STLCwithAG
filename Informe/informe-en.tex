@@ -285,7 +285,7 @@ f2 f = (??? , snd . f)
 We don't have too many options to define the first component of $f2\;f$. We can
 return a constant integer or we can evaluate $f$ on a constant value. If we do this,
 we obtain one side of the isomorphism and we can see that it is sufficient to our problem
-(for more information you can ask to Magoya, who kindly will answer yout questions)
+(we couldn't prove this at the moment)
 
   \begin{lstlisting}
   f1 :: (Int,Int -> Tree) -> (Int -> (Int,Tree))
@@ -391,7 +391,7 @@ with the idea that we just need to implement the relating things of the problem.
 In the following, we will implement a type inference algorithm for the simply typed lambda
 calculus, as well as the parser and the pretty printer.
 
-\subsection{Syntax: Parser y Pretty Printing}
+\subsection{Syntax: Parser and Pretty Printing}
 
 \subsubsection{Syntax}
 
@@ -648,7 +648,7 @@ to read. In particular, it contains many of the print cases that the semantics w
 @ (λ x → λ f → λ g → f @ g @ (x @ g))
 \end{verbatim}
 
-\subsection{Inferidor de tipos}
+\subsection{Type Inference}
 
 
  The main purpose of this work is to define type inference for the simply typed lambda calculus. Remind the typing rules:
@@ -686,7 +686,7 @@ to read. In particular, it contains many of the print cases that the semantics w
  judgement is $\mathtt{T-ABS}$ where the type has to be in the form $\theta_1 \rightarrow \theta_2$,
  so we can replace $\theta\,:=\,\theta_1 \rightarrow \theta_2$ and then we try to construct type judgement
  $\typejud{\pi,(x:\theta_1)}{x}{\theta_2}$. As the term now is a variable, the only possible rule
- is $mathtt{T-VAR}$ and we need to replace $\theta_1$ for $\theta_2$. Finally the inferred type is:
+ is $\mathtt{T-VAR}$ and we need to replace $\theta_1$ for $\theta_2$. Finally the inferred type is:
  
   \begin{align*}
     {\theta_2 \rightarrow \theta_2}
@@ -706,10 +706,12 @@ to read. In particular, it contains many of the print cases that the semantics w
 
   Where $Var$ is defined as $String$.
   
-  Types are defined in normal Haskell code with the next grammar:
+  Types are defined using Attribute Grammars too with the next grammar:
   
   \begin{lstlisting}
-   data Type = AtomType TVar | FunType Type Type
+   data Type
+        | AtomType at :: {TVar}
+        | FunType lt,rt :: Type
   \end{lstlisting}
 
   \indent and $TVar$ is implemented with integer numbers.
@@ -813,21 +815,33 @@ to read. In particular, it contains many of the print cases that the semantics w
 	\includegraphics[height=10cm]{cuarto.pdf}
   \end{center}
    
-  Ahora tenemos de nuevo en el lado izquierdo el identificador $f$ y el tipo asumido es $\theta_6 \rightarrow \theta_5$,
-  y como en el contexto tenemos $f:\theta_1$ agregamos a la substitución $\theta_1 := \theta_6 \rightarrow \theta_5$.
+  In the last image we obtain the substitution resulting of type inference. We can see that when 
+  two substitution are concatenated the replacements are performing online and if is necessary,
+  unification is performed. $\theta_5 \rightarrow \theta_4$ is unified with $\theta_6 \rightarrow \theta_5$
+  so we add $\theta_5\,:=\,\theta_6$ and $\theta_4\,:=\,\theta_5$ to the substitution.
+  Substitutions and unification was implemented using Attribute Grammars too.
   
-  Al momento de concatenar las substituciones vemos que tenemos 
-  
+  The final result is the substitution on the first node of the term. And the inferred type
+  is the result of applying that substitution on the initial type $\theta$. So we obatin the type
+  $(\theta_6 \rightarrow \theta_6) \rightarrow \theta_6 \rightarrow \theta_6$.
+ 
   
   \section{Conclusions}
   
-  En la primera sección de este trabajo explicamos el ejemplo ``RepMin'' el cual es introducido en varios
-  trabajos sobre Attribute Grammars como en (AFP3) o (tesis del chabón). Una manera de ver la sintaxis y semántica
-  de lenguajes es mediante álgebras iniciales (initial algebra semantics), y nos encontramos estudiando este tema
-  utilizando teoría de categorías
-  utilizando teoría de categorías y es un área que nos encontramos 
-  estudiando en nuestro doctorado por lo cual nos pareció interesante introducirlo. Todavía 
+  In the first section we explained the ``repmin'' problem, which is introduced in several papers
+  about Attribute Grammars. A way of thinking about syntax and semantics is by initial algebras and
+  we are studying it at the moment using category theory. Because of this we try to applicate
+  some of that concepts in the implementation of repmin problem and we obtained an equivalent 
+  solution to those found in the bibliografy. Nevertheless there are concepts that we need
+  to understand in a better way.
   
+  To apply the power of Attribute Grammars we chose Type inference of lambda calculus because we
+  are studying it in our phd and we think that is an interesting problem to solve. We found the main difficulty
+  when we implemented unification and substitution and finally we found a solution using Attribute Grammars too,
+  but we didn't explain in this paper.
+  
+  Finally, we decided to write this ``attempt of report'' to practice writing at the beginning of phd and we know
+  that we need to improve this. We apologize for the many mistakes that you can find.
   
   
   
