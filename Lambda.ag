@@ -50,7 +50,7 @@ sem Term
          lhs.tsubst = case @ctxInfo of
                             Just t@(AtomType v) -> if @lhs.termType == t
                                                     then []
-                                                    else appendTS v @lhs.termType []
+                                                    else addTS v @lhs.termType []
                             Nothing -> error ("Not in scope: "++(@ident))
                             
     | Abs loc.ntypel      = case @lhs.termType of
@@ -60,22 +60,22 @@ sem Term
                              FunType _ t2 -> t2
                              AtomType v   -> freshType (nextTVar @lhs.maxTVar)
           loc.mctx        = addCtx @var @ntypel @lhs.ctx
-          term.ctx        = maybe (error "Captura de variable") id @mctx
+          term.ctx        = maybe (error "Variable in context") id @mctx
               .termType   = @ntyper
               .maxTVar    = case @lhs.termType of
                              FunType _ _ -> @lhs.maxTVar
                              AtomType _  -> nextTVar (nextTVar @lhs.maxTVar)
           lhs.tsubst      = case @lhs.termType of
                                 FunType _ _ -> @term.tsubst
-                                AtomType v  -> appendTS v (FunType @ntypel @ntyper) 
-                                                          @term.tsubst 
+                                AtomType v  -> concatTS [(v,FunType @ntypel @ntyper)]
+                                                        @term.tsubst 
                                                     
     | App loc.ntype      = freshType @lhs.maxTVar 
           lt.termType    = FunType @ntype @lhs.termType
             .maxTVar     = nextTVar @lhs.maxTVar
           rt.termType    = @ntype
-            .maxTVar     = nextTVar @lt.maxTVar
-          lhs.tsubst = concatTSubst @lt.tsubst @rt.tsubst
+            .maxTVar     = @lt.maxTVar
+          lhs.tsubst     = concatTS @lt.tsubst @rt.tsubst
 
 
           

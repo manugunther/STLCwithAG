@@ -28,22 +28,20 @@ showTVar n = stringTVar ++ (show n)
 initTVar :: TVar
 initTVar = 0
 
--- Dado un tipo, devuelve todas las TVar que ocurren
+-- Returns all variables occurring on a type.
 allTVars :: Type -> S.Set TVar
 allTVars (AtomType v)    = S.singleton v
 allTVars (FunType t1 t2) = (allTVars t1) `S.union` (allTVars t2)
     
--- Genera una variable de tipo fresca para una lista de variables
+-- Returns a fresh variable
 freshTVar :: TVar -> TVar
 freshTVar = nextTVar
 
 nextTVar :: TVar -> TVar
 nextTVar = (+1)
     
--- Dado un conjunto de variables, devuelve
--- una substitución de variables por variables,
--- donde las resultantes tendrán los menores coeficientes
--- posibles
+-- From a set of variables returns a substitution of
+-- variables with lower indices.
 getMinVars :: S.Set TVar -> [(TVar,TVar)]
 getMinVars s = zip l [0..length l]
     where l = S.toAscList s
