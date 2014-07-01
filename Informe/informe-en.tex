@@ -403,8 +403,8 @@ and gives information about such decision.
 
 For the implementation of the parser we use the library ``uu-parsinglib''
 which provides exactly an error correction mechanism. For example, being ``pa'' the
-parser of the letter ``a'', trying to parse ``b'' will produce an ``a'' where what 
-happened was the replacement of ``b'' for ``a'':\\
+parser of the letter ``a'', trying to parse ``b'' will produce an ``a'' the correction
+being the replacement of ``b'' for ``a'':
 
 \begin{code}
  >>> run pa  "b"
@@ -414,12 +414,12 @@ happened was the replacement of ``b'' for ``a'':\\
        Inserted  'a' at position LineColPos 0 1 1 expecting 'a'
 \end{code}
 
-Some to highlight is that the error correction that we pretend for our parser
-of terms is almost free. In a preliminary summary, for parse the body of an 
+We would like to highlight that the error correction that we pretend for our parser
+of terms comes almost for free. In a preliminary summary, for parsing the body of an 
 abstraction we just need to have a list with the introduced variables till that
-moment and generate parsers for each name of variable on the list.\\
+moment and generate parsers for each variable in the list.\\
 
-Before introduce the parsers concerning each construction of the grammar, 
+Before introducing the parsers concerning each construction of the grammar, 
 we define some general parsers that will be useful.
 
 \begin{lstlisting}
@@ -429,8 +429,8 @@ We generate a parser from a default parser and a list of strings.
 
 \begin{lstlisting}
 parseXSym :: Parser String
-\end{lstlisting} con X $\in$ {Lam,Dot,App}\\
-Parsers for the symbols $\lambda$, $.$ y $@$. Where further we can
+\end{lstlisting} with X $\in$ {Lam,Dot,App}\\
+Parsers for the symbols $\lambda$, $.$ and $@$. Further we can
 parser ``\textbackslash \textbackslash'' instead of $\lambda$ and $->$ or $\rightarrow$
 instead of ``$.$'' .
 
@@ -438,33 +438,35 @@ instead of ``$.$'' .
 parseVar :: Parser Var
 \end{lstlisting} Parser for variables.\\
 
-Now, given the list of variable to parse, say $vars$, parse an variable identifier
-will be generate parsers for each variable in the list and fail as default parser:
+Now, given the list of variable to parse, say $vars$, identifier
+we generate parsers for each variable in the list and fail as default parser:
 
 \begin{lstlisting}
 parseId :: [Var] -> Parser Term
 parseId vars = Id <$> parseTermSym pFail vars
 \end{lstlisting}
 
-Something interesting to highlight is that in the generation of the parsers of
-variables is contained the action of correct an occurrence of free variable.\\
+Something interesting to highlight is that we include the correcting action in
+the generated parser for variables.\\
 
-For the case of the abstraction, leaving aside the parse of the respective symbols,
-we going to parse a variable and we could say that we needed for two things;
+For the case of the abstraction, leaving aside the parsing of the respective symbols,
+we are going to parse a variable and we could say that we need two things;
 (1) the constructor of the abstraction, (2) the list of possibles variables to parse.
-This bring a problem, since when we parse a variable this is encapsulated inside
+This brings a problem, since when we parse a variable this is encapsulated inside
 of the computation ``Parser Var'', by (2) we can think that the type of the parser
-that parse the body of the abstraction is $Var -> Parser Term$, because take the
-variable, adds to the list of variables and then parse the term.
-If now we pay attention we need a function that combines, parse the variable with
-parse a term adding that variable, i.e. a function with type:
+that parse the body of the abstraction should be $Var -> Parser Term$, because it takes the
+variable, adds it to the list of bound variables and then parse the term.
+
+If we pay attention we need a function which takes a parser for the bound occurrence,
+the function expecting that variable and parses the body adding the variable to the
+list of bound variables, i.e. a function with type:
 
 \begin{lstlisting}
 Parser Var -> (Var -> Parser Term) -> Parser Term
 \end{lstlisting}
 
-but this is just the type of the bind ($>>=$), $m \ a \rightarrow (a \rightarrow m \ b) \rightarrow m \ b$. This force us to use monads, for which we need to use the addLength function. We are
-not sure if exist a way of solve this without monads, with the purpose of avoid the
+but this is just the type of the bind operator ($>>=$), $m \ a \rightarrow (a \rightarrow m \ b) \rightarrow m \ b$. This forces us to use monads, for which we need to use the addLength function.
+We are not sure if there exist a way to solve this without monads, with the purpose of avoiding the
 use of addLength and of course... monads. Then, the final definition is,
 
 \begin{lstlisting}
@@ -478,9 +480,8 @@ parseAbs vars =
        parseLamSym <*> parseVar <* parseDotSym
 \end{lstlisting}
 
-Concluding, for the case of the application will be parse variable identifier or
-abstraction separated by ``$@$'', for this we define a particular parser that
-contain these parsers,
+For concluding, for the case of the application we try to parse bound variables, abstractions
+or applications, for which we use the symbol ``$@$'', this parser is defined as follows,
 
 \begin{lstlisting}
 parseTerm' :: [Var] -> Parser Term
@@ -492,18 +493,18 @@ parseApp :: [Var] -> Parser Term
 parseApp vars = (App <$ parseAppSym) `pChainl` (parseTerm' vars)
 \end{lstlisting}
 
-then, parse a term will be simply the parser defined for the application,
+then, parsing a term is simply the parsing of an application,
 
 \begin{lstlisting}
 parseTerm :: [Var] -> Parser Term
 parseTerm vars = parseApp vars
 \end{lstlisting}
 
-In conclusion, we have a parser for the previous grammar which also corrects some
-mistakes, as we mentioned at the start. Something important to comment is that the
-correction of errors may have some that other unwanted behaviour due the ``simplistic''
-implementation in terms of the use of the power of correction of the library. An
-example of this may be,
+In conclusion, we have a parser for the grammar of the lambda calculus which also corrects some
+mistakes, as we mentioned at the beginning. Something important to comment is that the
+correction of errors may have some unwanted behaviour due to the ``simplistic''
+implementation using the internal mechanisms of corrections offered by the library. An example
+of this may be,
 
 \begin{verbatim}
 >>> parserTerm "\\a -> b@a"
@@ -514,21 +515,21 @@ example of this may be,
 )
 \end{verbatim}
 
-where most probably the wanted correction it would have been replace ``b'' for
-``a'', and generate the term $\lambda$ $a$ $\rightarrow$ $a@a$.
+where most probably the wanted correction it would be the replacement of ``b'' for
+``a'', and the production of the term $\lambda$ $a$ $\rightarrow$ $a@a$.
 
 \subsubsection{Pretty Printing}
 
-The implementation of the pretty printing interests us as a first little step to
+The implementation of the pretty printing is of interest to us as a first little step to
 the definition of the semantic function for the data type $Term$ using AG. In
-summarize, the semantics that we are thinking transform a $Term$, i.e. a term
+summary, the semantics we are thinking transforms a $Term$, i.e. a term
 of the lambda calculus, in his representation in $String$.\\
 
 Despite of having few constructors, a term of the lambda calculus can be complex
 to read and an ``organization'' of the subterms when it comes to writing can be
 very helpful for the interpretation. For example, the term 
 $(\lambda x \rightarrow x@x)@(\lambda x \rightarrow x@x)$
-not bring much trouble, but however if we have,
+does not bring much trouble, but however if we have,
 $(\lambda x \rightarrow
 	\lambda y \rightarrow
 		\lambda f \rightarrow f @ (x @ (\lambda w \rightarrow f @ w)) @ (y @ f @ x))$
@@ -538,17 +539,17 @@ $(\lambda x \rightarrow
 	\lambda g \rightarrow \lambda h \rightarrow h @ (f @ x) @ (g @ y))$
 $@$ $\lambda x \rightarrow \lambda f \rightarrow 
 		\lambda g \rightarrow f @ g @ (x @ g)$
-it must be very difficult to read. Thus, a good presentation of the term it always
+it is certainly more difficult to read. Thus, a good presentation of the term can be always
 helpful. The use of the ``uulib'' library, in particular ``UU.PPrint'', gives us
-a way of implement a pretty printing in a simple way.\\
+a way of implement a pretty printer in a simple way.
 
 As we saw for the case of Repmin, we must define attributes and give rules for
-each constructor, this time for $Term$, which express how to transform any
-in his representation in $String$.\\
+each constructor, this time for $Term$, which express how to transform each of its productions
+in its representation as strings.
 
-We want an synthesised attribute, that we called ``pprint'', that is the result
-of transform a $Term$ in a $String$ and an inherited attribute that we need to
-know when enclose a term between brackets or not.
+We want a synthesised attribute, that called ``pprint'', that is the result
+of transforming a $Term$ in a $String$ and an inherited attribute that we need to
+know when to enclose a term between brackets or not.
 
 \begin{lstlisting}
 attr Term 
@@ -561,26 +562,24 @@ attr Term
 \begin{lstlisting}    
 sem Term
 \end{lstlisting}
-For the variable identifier will be simply print the name of the variable, remembering
-that these were represented by $String$s
+Pretty-printing a variable consists sumply in printing the name
 \begin{lstlisting}    
     | Id  lhs.pprint  = text @ident
 \end{lstlisting}
 
-In the case of the application, we began explaining that print an application will
-be simply print is left side (lt) and is right side (rt) but having some considerations;
-as for the brackets, because the application is left associative if we have, for example
-the application of $x@y$ and $z@w$ we will need to place parenthesis only in the right side
-($rt.paren = Paren$) for print the correct application $x@y@(z@w)$. But also, there is
-a particular case where the left side need be enclosed in parentheses, for example
-applying $\lambda x \rightarrow x$ and $z@w$. That is the reason of only enclose between
-parenthesis in the left side if this is an abstraction ($lt.paren = ParenAbs$).
-Notice that without the parenthesis in the example applications they would be $x@y@z@w$ and
-$\lambda x \rightarrow x@z@w$ which not are the correct representations of the original
-terms.\\
+In the case of the application, we began explaining that to print an application will
+be as simple  as printing its left side (lt) and its right side (rt) but taking into account 
+some considerations; as for the brackets, because the application is left associative if we
+have, for example the application of $x@y$ to $z@w$ we will need to place parenthesis only in the right side ($rt.paren = Paren$) for printing the correct application $x@y@(z@w)$. But also, there is
+a particular case where the left side needs to be enclosed in parentheses, for example
+applying $\lambda x \rightarrow x$ to $z@w$. That is the reason for putting parenthesis
+around the left side only when it is an abstraction ($lt.paren = ParenAbs$).
+Notice that without the parenthesis in the example, applications would be $x@y@z@w$ and
+$\lambda x \rightarrow x@z@w$ which are not the correct representations of the original
+terms.
 
-Now, leaving a side the parentheses, for print an application the idea would be try that
-both, the left and right side, stay at the same level and in the case that this is not
+Now, leaving aside parentheses, for printing an application the idea would be to try that
+both sides, the operator and the operand, stay at the same level and in the case that this is not
 possible obtain the following,
 
 \begin{center}
@@ -589,8 +588,8 @@ $@$\\
 $rt$
 \end{center}
 
-i.e, divide the subterms in two levels intercalating the application operator. With the
-possibility of put the right side at the same level of the operator.
+i.e, to divide the subterms in two levels intercalating the application operator. With the
+possibility of putting the right side at the same level of the operator.
 
 \begin{lstlisting}    
     | App lhs.pprint  = (putParen @lhs.paren) 
@@ -601,11 +600,11 @@ possibility of put the right side at the same level of the operator.
           lt.paren    = ParenAbs
 \end{lstlisting}    
 
-Finishing, we need to define the semantics for the case of the abstraction constructor.
-For this case the idea will be, if we can write all the abstraction in the same level
-we do it, when we can't we will print the body ($term$) in other level with some
-indented (3 characters) for help to identify the body of the abstraction when this
-is being applied to other term. On the other hand, the body of the abstraction never
+To finish, we need to define the semantics for the case of the abstraction constructor.
+For this case the idea is to write all the abstraction i the same level; but, when it
+does not fit, we will print the body ($term$) in other level with some
+indentation (3 characters) to ease the reading of the body, when the abstraction is applied
+to other term. On the other hand, the body of the abstraction never
 needs to be between parentheses ($term.paren = NoParen$).
 
 \begin{lstlisting}
@@ -616,8 +615,8 @@ needs to be between parentheses ($term.paren = NoParen$).
           term.paren  = NoParen
 \end{lstlisting}
 
-Printing the example of the beginning we can note that is much easier to read. In
-particular contains many of the print cases that the semantics we give implements.
+Printing the example of the beginning with our pretty-printer, we can note that it is much easier 
+to read. In particular, it contains many of the print cases that the semantics we give implements.
 
 \begin{verbatim}
 >>> App (App t2 t3) t1
