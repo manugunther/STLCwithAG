@@ -41,9 +41,9 @@ attr Type
     
     syn apply    :: Type
     syn inType   :: Bool
-    syn cpy      :: self
     syn tvars    :: {S.Set TVar}
     syn unify    :: {(Type,TSubst)}
+    syn cpy      :: self
 
     
 sem Type
@@ -100,8 +100,16 @@ type TSubst = [SingleS]
 attr TSubst 
     inh vt       :: SingleS
     
+    -- Replace a tvar by a type
+    -- in all types of substitution
     syn replace :: TSubst
+    -- Add the pair (v,t) from inherited attribute to substitution,
+    -- the replace v by t is performed in all substitution and
+    -- if v is contained, unification is performed.
+    -- The return value is the substitution with pair added and
+    -- substitution resulting of unification.
     syn addTS    :: {(TSubst,TSubst)}
+    -- lookup variable (fst vt) on substitution.
     syn lookup  :: {Maybe Type}
     
 
@@ -116,20 +124,25 @@ sem TSubst
            lhs.replace = @rep
            hd.v        = fst @lhs.vt
            hd.t        = snd @lhs.vt
-           loc.mt      = case @hd.lookup of
+           loc.lkp     = case @hd.lookup of
                             Nothing -> @tl.lookup
                             Just t  -> Just t
-           lhs.lookup   = @mt
+           lhs.lookup   = @lkp
            -- unifyres is a tuple containing the unified type
            -- and substitution resulting from unification. If
            -- is not necessary unification, contains original
            -- type and empty list.
-           loc.unifyres = case @mt of
+           loc.unifyres = case @lkp of
                             Just t  -> unify t (snd @lhs.vt)
                             Nothing -> (snd @lhs.vt,[])
            lhs.addTS = if not (occurs @lhs.vt)
-                         then case @mt of
+                         then case @lkp of
+                            -- if variable (fst @lhs.vt) is not in substitution
+                            -- we replace it for type (snd @lhs.vt) and add the new pair
                             Nothing -> (@rep ++ [@lhs.vt],[])
+                            -- if variable (fst @lhs.vt) is in substitution
+                            -- we perform unification. Resulting substitution
+                            -- contains variable (fst @lhs.vt) only once.
                             Just _  -> let (tladd,tlts) = @tl.addTS in
                                          if fst @hd.cpy == fst @lhs.vt 
                                             then (tladd,tlts++(snd @unifyres))

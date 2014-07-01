@@ -109,9 +109,9 @@ putParen' NoParen = id
 putParen' _       = parens
 
 
-uncurryN :: (a -> b -> c -> d -> g) -> 
+uncurry4 :: (a -> b -> c -> d -> g) -> 
             (a,b,c,d) -> g
-uncurryN fun (a,b,c,d) = fun a b c d    
+uncurry4 fun (a,b,c,d) = fun a b c d    
 
 inhValues = ([],initTVar,NoParen,initType)
 
@@ -121,7 +121,7 @@ inhValues = ([],initTVar,NoParen,initType)
 pprint :: Int -> Term -> String
 pprint n t = 
     let pdoc = pprint_Syn_Term (wrap_Term (sem_Term t)
-                                        (uncurryN Inh_Term inhValues))
+                                        (uncurry4 Inh_Term inhValues))
     in displayS (renderPretty 1 n pdoc) $ ""
     
 instance Show Term where
@@ -131,6 +131,6 @@ instance Show Term where
 getType :: Term -> Type
 getType t = 
     let tsubst = tsubst_Syn_Term (wrap_Term (sem_Term t)
-                                        (uncurryN Inh_Term inhValues))
+                                        (uncurry4 Inh_Term inhValues))
     in reduceIndexes (apply tsubst initType)
 }

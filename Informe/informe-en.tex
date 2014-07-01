@@ -56,7 +56,7 @@ The ``Rep Min'' is a well known example of the expressiveness of Lazy Evaluation
 inspires the way to define the semantics that exploit the Attribute Grammars.
 
 Think about the data type of binary trees, with numbers in the leaves. The problem
-consists in replacing each value at each leaf by the least value if the whole tree:\\
+consists in replacing each value at each leaf by the least value in the whole tree:\\
 
 \begin{minipage}{.37\textwidth}
 \begin{tikzpicture}[level/.style={sibling distance = 3cm/#1,
@@ -172,7 +172,7 @@ Let us return to the problem that we want to solve, given a tree we want to tran
 in the tree in which the value of the leaves is the least value.
 
 In a first attempt, we get the least value of the tree and then replace it in
-all the leaves. This implies walking the initial tree two times.
+all leaves. This implies walking the initial tree two times.
 
 Now, to get the least value we define a FTree-algebra and define a function that
 given an integer $n$ constructs the FTree-algebra which replace the value of the leaves
@@ -406,7 +406,7 @@ Term ::= Var
 
 \subsubsection{Parser}
 
-The implementation of a parser for the syntax of the lambda calculus is rather simple,
+The implementation of a parser for the syntax of lambda calculus is rather simple,
 even adding the restriction that we only allow to parse closed terms, i.e. terms in which
 don't occur free variables. However, suppose we should to parse the following string,\\
 
@@ -420,7 +420,7 @@ i.e. a mistake was made by writing the string. Thus, a parser a little bit
 more interesting would be one that detects that kind of errors, corrects them
 and gives information about such decision.
 
-For the implementation of the parser we use the library ``uu-parsinglib''
+For the implementation of parser we use the library ``uu-parsinglib''
 which provides exactly an error correction mechanism. For example, being ``pa'' the
 parser of the letter ``a'', trying to parse ``b'' will produce an ``a'' the correction
 being the replacement of ``b'' for ``a'':
