@@ -185,8 +185,11 @@ allTVars t = tvars_Syn_Type (wrap_Type (sem_Type t) $ Inh_Type undefined undefin
 -- online
 concatTS :: TSubst -> TSubst -> TSubst
 concatTS ts []          = ts
+-- addTS return the substitution ts with pair (v,t) added to the end and
+-- if v is in ts, res contains v only once. ts'' is the substitution resulting
+-- from unification and is added to the end
 concatTS ts ((v,t):ts') = let (res,ts'') = addTS  in
-                            concatTS (concatTS res ts'') ts'
+                            concatTS res (concatTS ts' ts'')
     where addTS = addTS_Syn_TSubst (wrap_TSubst (sem_TSubst ts) $ Inh_TSubst (v,t))
           
 -- Unify two types, return one of these and the substitution performed
