@@ -52,11 +52,11 @@
 
 \subsection{The RepMin problem}
 
-The ``Rep Min'' is a well known example of the power of Lazy Evaluation and inspires the way
-of define semantics that exploit the Attribute Grammars.
+The ``Rep Min'' is a well known example of the expressiveness of Lazy Evaluation and
+inspires the way to define the semantics that exploit the Attribute Grammars.
 
-Think about the data type of binary trees, with numbers in leaves. The problem consists in
-replace each value at leaves by the least value:\\
+Think about the data type of binary trees, with numbers in the leaves. The problem
+consists in replacing each value at each leaf by the least value if the whole tree:\\
 
 \begin{minipage}{.37\textwidth}
 \begin{tikzpicture}[level/.style={sibling distance = 3cm/#1,
@@ -100,17 +100,17 @@ replace each value at leaves by the least value:\\
 
 \
 
-We can define a data type in Haskell for represent a binary tree of the following way:
+We can define a data type in Haskell for representing a binary tree in the following way:
 
 \begin{lstlisting}
  data Tree =   Leaf Int 
 	     | Bin (Tree,Tree)
 \end{lstlisting}
 
-A tree can be built from an integer (a leaf) or by others two subtrees, i.e we
-can built an element of $Tree$ from an element of the disjoin union of 
-$Int \sqcup (Tree\,\times\,Tree)$. To this disjoin union we can define in Haskell
-for any type $a$:
+A tree can be built from an integer (a leaf) or from others two subtrees, i.e we
+can think of an element of $Tree$ as an element of the disjoint union of 
+$Int \sqcup (Tree\,\times\,Tree)$. This disjoint union can be defined for any
+type $a$:
 
 \begin{lstlisting}
  type FTree a = Either Int (a,a)
@@ -119,19 +119,20 @@ for any type $a$:
 \noindent and then we can get any element of $\mathbf{Tree}$ from some element
 of $\mathbf{FTree\,Tree}$.
 
-To the type of this function, which consist in get an element of type $a$ from one of type
-$\mathbf{FTree}\,a$, explicitly we define:
+AS we will see the type of that function is interesting in itself, so we explicitly
+define it:
 
 \begin{lstlisting}
  type FTreeAlgebra a = FTree a -> a
 \end{lstlisting}
 
-Now, if we want to define a semantic for the binary trees in the semantic set $B$ we can
-define a $\mathbf{FTreeAlgebra}\;B$. This is, give a rule in the case of we have an integer
-and another in the case of have a pair in $B \times B$.
+Now, if we want to define a semantics for the binary trees in the semantic set $B$ we can
+define a $\mathbf{FTreeAlgebra}\;B$. This is, we should give a rule in the case of having
+an integer and another in the case of having a pair in $B \times B$, which one should think
+as the semantic value of the subtrees.
 
-The syntactic representation of binary trees with type $Tree$ can be seen as
-a trivial semantic and we can define the next algebra:
+For example, the syntactic representation of binary trees with the type $Tree$ could be
+the trivial semantics as follows:
 
 \begin{lstlisting}
   init_algebra :: FTreeAlgebra Tree
@@ -139,9 +140,9 @@ a trivial semantic and we can define the next algebra:
 \end{lstlisting}
 
 Thinking in categories, we can see $FTree$ as a functor which transform an object $A$ in
-an object $Int \sqcup (A \times A)$ and then a FTree-algebra will be an arrow 
+an object $Int \uplus (A \times A)$ and then a FTree-algebra will be an arrow 
 $\alpha\,:\,FTree\;A \rightarrow A$. If $\alpha$ is the initial FTree-algebra, then for
-any other FTree-algebra $\beta\,:\,FTree\;B \rightarrow B$ must exist an unique arrow
+any other FTree-algebra $\beta\,:\,FTree\;B \rightarrow B$ there must exist an unique arrow
 between $\alpha$ and $\beta$, i.e, a single $f$ such that the following diagram commutes:
 
 \begin{center}
@@ -156,7 +157,7 @@ between $\alpha$ and $\beta$, i.e, a single $f$ such that the following diagram 
 
 \
 
-Thus, if we want to define a semantic for the binary trees we must find the single arrow
+Thus, if we want to define a semantics for the binary trees we must find the single arrow
 between the $init\_algebra$ (the initial FTree-algebra) and other FTree-algebra. This arrow
 is called \textbf{catamorfism}:
 
@@ -167,15 +168,15 @@ is called \textbf{catamorfism}:
 					     cataTree beta t2))
 \end{lstlisting}
 
-Returning to the problem that we want to solve, given a tree we want to transform it
-in a tree in which the value of the leaves is now the least value.
+Let us return to the problem that we want to solve, given a tree we want to transform it
+in the tree in which the value of the leaves is the least value.
 
-One first solution is, first get the least value of the tree and then replace it in
-all leaves. This implies walk the initial tree two times.
+In a first attempt, we get the least value of the tree and then replace it in
+all the leaves. This implies walking the initial tree two times.
 
 Now, to get the least value we define a FTree-algebra and define a function that
-given an integer $n$ constructs the FTree-algebra which replace the value of leaves
-for $n$:
+given an integer $n$ constructs the FTree-algebra which replace the value of the leafs
+for $n$, the least value got in the first phase:
 
 \begin{lstlisting}
   min_alg :: FTreeAlgebra Int
@@ -185,7 +186,7 @@ for $n$:
   rep_min_alg n = either (const $ Leaf n) Bin
 \end{lstlisting}
 
-Then, we solve the problem calling twice the function $cataTree$:
+Finally, we solve the problem calling twice the function $cataTree$:
 
 \begin{lstlisting}
   replace_min :: Tree -> Tree
@@ -193,10 +194,10 @@ Then, we solve the problem calling twice the function $cataTree$:
 		      cataTree (rep_min_alg n) t
 \end{lstlisting}
 
-Notice that in the function $rep\_min\_alg$ we construct a FTree-algebra from an integer.
-Instead of this, we can define a FTree-algebra which allow us to compute a
-function that given an integer builds up a tree with all the values of the leaves
-replaced by that integer:
+Notice that in the function $rep\_min\_alg$ we have an FTree-algebra from a integer.
+Instead of doing this, we can define an FTree-algebra which allow us to compute a
+function that given an integer builds up a tree with all the values of the leafs
+replaced by the integer:
 
 \begin{lstlisting}
   rep_min_alg' :: FTreeAlgebra (Int -> Tree)
@@ -205,16 +206,16 @@ replaced by that integer:
 			    Bin (lfun m,rfun m))
 \end{lstlisting}
 
-\noindent so, the solution to our problem can be:
+\noindent then, the solution to our problem can be stated as:
 
 \begin{lstlisting}
   replace_min' :: Tree -> Tree
   replace_min' t = (cataTree rep_min_alg' t) (cataTree min_alg t) 
 \end{lstlisting}
 
-In the previous definition we can see that the two calls of $cataTree$ are independent, thus
+In the last definition we can see that the calls to the function $cataTree$ are independent, thus
 we could compute a single FTree-algebra that get both results at the same time. With $min\_alg$
-make the least value and with $rep\_min\_alg'$ the function for builds up the tree, whereby if
+making the least value and with $rep\_min\_alg'$ the function for builds up the tree, therefore if
 we could make the product of those FTree-algebra we would get both results:
 
 \begin{lstlisting}
@@ -231,7 +232,7 @@ we could make the product of those FTree-algebra we would get both results:
   
 \end{lstlisting}
 
-So now we can get the result to the problem making one call to $cataTree$:
+So now we can get the result to the problem making only one call to $cataTree$:
 
 \begin{lstlisting}
  replace_min'' :: Tree -> Tree
@@ -239,19 +240,15 @@ So now we can get the result to the problem making one call to $cataTree$:
     where (m, r) = cataTree rep_min_alg'' t
 \end{lstlisting}
 
-In final step, we can see that from a value in $(Int,Int \rightarrow Tree)$ we can
-obtain a value in $Int \rightarrow (Int,Tree)$. The inverse is not always true but 
-is not a matter here.
-
-We can consider the following function that given two isomorphic types
-$a$ and $b$, and a $FTreeAlgebra\;a$ obtain a $FTreeAlgebra\;b$:
+One final improvement can be considered, for this we introduce the following
+function that given two isomorphic types $a$ and $b$, and a $FTreeAlgebra\;a$ 
+constructs a $FTreeAlgebra\;b$:
 
 \begin{lstlisting}
 getIsoAlg :: (a -> b) -> (b -> a) -> FTreeAlgebra a -> FTreeAlgebra b
 getIsoAlg fab fba fa = either (fab . fa . Left)
                                  (fab . fa . Right . (fba *** fba))
 \end{lstlisting}
-\medskip
 
 In our problem we have a FTree-algebra of type
   
@@ -259,21 +256,23 @@ In our problem we have a FTree-algebra of type
    (Int,Int -> Tree)
 \end{lstlisting}
 
-\noindent and we want to define a FTree-algebra of type:
+and we can consider, for our problem, that it is equivalent to the type
+(explain this, Ah! traducía todo... :) )
 
 \begin{lstlisting}
-   Int -> (Int,Tree)
+Int -> (Int,Tree)
 \end{lstlisting} 
 
-We need define two functions to exchange those types:
+Then, we need two functions to exchange those types such that they are one inverse to the other:
   
-  \begin{lstlisting}
-  f1 :: (Int,Int -> Tree) -> (Int -> (Int,Tree))
-    
-  f2 :: (Int -> (Int,Tree)) -> (Int,Int -> Tree)
-  \end{lstlisting}
+\begin{lstlisting}
+f1 :: (Int,Int -> Tree) -> (Int -> (Int,Tree))
+  
+f2 :: (Int -> (Int,Tree)) -> (Int,Int -> Tree)
+\end{lstlisting}
 
-We can construct the first of these easily, but it's not the case for the second one:
+The first we can construct easily, but that is not the case for the second one. We find that to
+get the first element of the pair we don't know which value give to the function:
 
 \begin{lstlisting}
 f1 :: (Int,Int -> Tree) -> (Int -> (Int,Tree))
@@ -283,58 +282,30 @@ f2 :: (Int -> (Int,Tree)) -> (Int,Int -> Tree)
 f2 f = (??? , snd . f)
 \end{lstlisting}
 
-We don't have too many options to define the first component of $f2\;f$. We can
-return a constant integer or we can evaluate $f$ on a constant value. If we do this,
-we obtain one side of the isomorphism and we can see that it is sufficient to our problem
-(to more information you can ask to Magoya)
-
-  \begin{lstlisting}
-  f1 :: (Int,Int -> Tree) -> (Int -> (Int,Tree))
-  f1 (i,f) = const i &&& f
-
-  f2 :: (Int -> (Int,Tree)) -> (Int,Int -> Tree)
-  f2 f = (fst (f 0) , snd . f)
-  \end{lstlisting}
-
-  Then, we define a new FTree-algebra:
-  
-  \begin{lstlisting}
-   rep_min_alg''' :: FTreeAlgebra (Int -> (Int,Tree))
-   rep_min_alg''' = getIsoAlg f1 f2 rep_min_alg''
-  \end{lstlisting}
-
-  And the solution is reached defining the next function that it works because of laziness of Haskell:
-  
-  \begin{lstlisting}
-   replace_min''' :: Tree -> Tree
-   replace_min''' t = r
-      where (m, r) = (cataTree rep_min_alg''' t) m
-  \end{lstlisting}
-
-  
+we must follow... (seguía traduciendo de mas ja)
 
 % de los árboles binarias con el tipo $Tree$ constituyen el álgebra inicial, que consiste en
 % aplicar la función $Leaf$ si el elemento es un entero, y la función $Bin$ si 
 
 \subsection{Repmin with Attribute Grammars}
 
-In the previous section we saw how to solve the Repmin problem in a more efficient way, performing
-a single walk to the tree thanks to the Lazy Evaluation of Haskell. For this we obtain a tuple in
+In the previous section we saw how to solve the problem of Repmin in a more efficient way, performing
+a single walk thanks to the Lazy Evaluation of Haskell. For this we obtain a tuple in
 which the first element was the least value of the tree and the second one was a function that
-given an integer builds up a tree with all the values of leaves replaced for
-that integer.
+given an integer builds up a tree with all the values of the leafs of the tree replaced for
+the integer.
 
 Notice that we could take the same steps for any other recursive data type, where the grammar
-not necessarily has two productions. We could define a function $F$ and the appropriate catamorphism,
-and then for calculate any semantics we only need to give one rule for each production of the
+not necessarily has two productions. We could define a functor $F$ and the appropriate catamorphism,
+and then for calculating any semantics we only need to give one rule for each production of the
 grammar.
 
-With \textbf{Attribute Grammars}, we have a simple notation for define semantics, defining the
-syntax of a data type and then giving the rules for each production of the grammar. A preprocessor
-transform the AG notation into Haskell code that is equivalent to that obtained in the previous
+With \textbf{Attribute Grammars}, we have a simple notation for specifying a semantics, defining the
+syntax of a data type and then to give the rules for each production of the grammar. A preprocessor
+transform the AG notation to Haskell code that is equivalent to that obtained in the previous
 section.
 
-The Repmin problem solved with Attribute Grammars has the following possible solution:
+Let us illustrate this point showing how the Repmin problem can be solved with AG:
 
 \begin{lstlisting}
 data Tree
@@ -366,42 +337,47 @@ sem Root
 	| Root tree.minval = @tree.m
 \end{lstlisting}
 
-The definition of the grammar is similar to the given definition in Haskell, just that we put names
-in each parameter of each production. To calculate the semantics we define two kinds of attributes,
-the synthesized ($syn$) which are those that for compute the value in a node we need to know the value
-of the children and the inherited ($inh$) which are passed top to down in the tree.
+The definition of the grammar is similar to the one given in Haskell, the only difference is that we 
+just put names in each parameter of each production. To calculate the semantics we define two kinds of 
+attributes, the synthesised ($syn$), which are those that for computing the value in a node we need to 
+know the value of the childrens, and the inherited ($inh$), which are passed top to down in the tree.
 
-In our example we need the least value of the tree to compute the result of Repmin. We define
+In our example we need the least value of the tree to compute the result of Repmin, then we define
 an inherited attribute $minval$ and two synthesized attributes, $m$ to calculate the least value
-of the tree and $res$ to compute the final tree with the replaced of $minval$ that is initialize
+of the tree and $res$ to compute the final tree with the replaced of $minval$ that is initialized
 in $m$.
   
-In the previous piece of code we use many abbreviations that allows to write shorter code. For example,
-if a rule of a grammar production has a single argument, the name of this can be omitted and the preprocesor generates 
-one with the name of the data type which has the first letter in lowercase. 
-If we want define a rule for an inherited attribute which doesn't change at child node, 
-it's not necessary to define that trivial rule, we can omit it and the preprocessor generates it for us.
+In the previous piece of code we used many abbreviations that allows us to write shorter code.
+For example, if a rule of a grammar production has a single argument, we can be omit the definition of
+the name and the preprocessor generates one consistent one with the name of the data type which has the
+first letter in lowercase. If an inherited attribute doesn't change the value passed to the children
+nodes, then it's not necessary to define that trivial rule.
 
-The generated code using \textbf{Attribute Grammars} compute the attributes values by doing the
-procedure that we show in the previous section. The type of the resulting algebra will be a function
+The generated code using \textbf{Attribute Grammars} computes the attributes values by doing the
+procedure that we have show in the previous section. The type of the resulting algebra will be a function
 where the parameters are the inherited attributes and the result will be a tuple where each element
 is a synthesized attribute.
   
+%   En general podemos tener muchos problemas donde necesitemos calcular algunos valores en una estructura de datos
+%   que luego tengan que ser utilizados para calcular otros valores, con estructuras recursivas más complicadas
+%   que los árboles binarios. Realizar todo el proceso que mostramos puede ser tedioso y propicio para cometer
+%   errores
 
-\section{The Lambda Calculus}
+\section{The Lambda Calulus}
 
-In the previous section we saw how we can define a function in a general way, that we called
-catamorphism, and how this definition leads us the introduction of a special syntax
+In the previous section we saw how we can define a function in a general way, we called
+catamorphism, and how this is internalized in the AG framework with a special syntax
 with the idea that we just need to implement the relating things of the problem.
 
-Following, we will implement type inference for the simply typed lambda calculus, as
-well as the parser and pretty printing.
+In the following, we will implement a type inference algorithm for the simply typed lambda
+calculus, as well as the parser and the pretty printer.
 
 \subsection{Syntax: Parser y Pretty Printing}
 
 \subsubsection{Syntax}
 
-$Var$ $::=$ Countable set. In general will be $a$, $b$, $c$, $x$, $y$, $z$, etc.
+Let $Var$ be a countable set. In general, we will use $a$, $b$, $c$, $s$, $x$, $y$, $z$. To
+denote elements of $Var$.
 
 \begin{lstlisting}
 Term ::= Var
@@ -411,25 +387,23 @@ Term ::= Var
 
 \subsubsection{Parser}
 
-The implementation of a parser for the syntax of the lambda calculus it's rather simple
-and straightforward, yet even adding the restriction that we only allow to parse closed
-terms, i.e. terms in which don't occur free variables.
-However, suppose we have the next term to parse,\\
+The implementation of a parser for the syntax of the lambda calculus is rather simple,
+even adding the restriction that we only allow to parse closed terms, i.e. terms in which
+don't occur free variables. However, suppose we should to parse the following string,\\
 
 $\lambda a . s$\\
 
-clearly ``s'' is free, but would not be bad assume that in reality that term might well
-have been\\
+clearly ``s'' is free, but it would not be wrong to assume that the intended string was\\
 
 $\lambda a . a$\\
 
-i.e. a mistake was made by writing the term. Thus, a parser a little bit
-more interesting it would be one that detect that kind of errors, corrects
-and gives information about such decision.\\
+i.e. a mistake was made by writing the string. Thus, a parser a little bit
+more interesting would be one that detects that kind of errors, corrects them
+and gives information about such decision.
 
-Now, for the implementation of the parser we use the library ``uu-parsinglib''
-which provides exactly a error correction. For example, being ``pa'' the parser
-of the letter ``a'', trying to parse ``b'' will produce an ``a'' where what 
+For the implementation of the parser we use the library ``uu-parsinglib''
+which provides exactly an error correction mechanism. For example, being ``pa'' the
+parser of the letter ``a'', trying to parse ``b'' will produce an ``a'' where what 
 happened was the replacement of ``b'' for ``a'':\\
 
 \begin{code}
@@ -657,9 +631,8 @@ particular contains many of the print cases that the semantics we give implement
 \end{verbatim}
 
 \subsection{Inferidor de tipos}
-
-
- The main purpose of this work is to define type inference for the simply typed lambda calculus. Remind the typing rules:
+ El objetivo principal de este trabajo es realizar un inferidor de tipos para el cálculo lambda con tipos simples. Recordemos
+ las reglas de tipado:
  
  \begin{align*}
  \infer[^{\mathtt{T-VAR}}]
@@ -680,29 +653,28 @@ particular contains many of the print cases that the semantics we give implement
        }
   \end{align*}
  
- In a context $\pi$ a term $t$ will have type $\theta$ if exists a derivation of
- $\typejud{\pi}{t}{\theta}$ using the previous rules.
+ En un contexto $\pi$ un término $t$ tendrá tipo $\theta$ si existe una derivación de
+ $\typejud{\pi}{t}{\theta}$ utilizando las reglas anteriores.
  
- To infer the type of a term we can assume that it has type $\theta$ and then perform substitutions
- to this type until obtain a valid type judgement. Supose we have the next term:
+ Para inferir el tipo de un término lo que podemos hacer es asumir que tiene un tipo $\theta$, e ir anotando
+ substituciones a ese tipo hasta obtener un juicio de tipado válido. Supongamos que tenemos el siguiente término:
  
  \begin{align*}
     \lambda\,x.x
  \end{align*}
 
- We assume that it has type $\theta$, but as this is an abstraction, the only rule to construct a valid
- judgement is $\mathtt{T-ABS}$ where the type has to be in the form $\theta_1 \rightarrow \theta_2$,
- so we can replace $\theta\,:=\,\theta_1 \rightarrow \theta_2$ and then we try to construct type judgement
- $\typejud{\pi,(x:\theta_1)}{x}{\theta_2}$. As the term now is a variable, the only possible rule
- is $mathtt{T-VAR}$ and we need to replace $\theta_1$ for $\theta_2$. Finally the inferred type is:
- 
+  Asumimos que tiene tipo $\theta$, pero como es una abstracción la única regla con la que podemos construir un juicio
+  válido es $\mathtt{T-ABS}$ donde concluye que el tipo tiene que ser de la forma $\theta_1 \rightarrow \theta_2$, 
+  por lo tanto agregaríamos la substitución $\theta\,:=\,\theta_1 \rightarrow \theta_2$ y luego
+  intentamos construir el juicio de tipado $\typejud{\pi,(x:\theta_1)}{x}{\theta_2}$, como el término ahora
+  es una variable la única regla posible es $\mathtt{T-VAR}$ para lo cual necesitamos agregar
+  la substitución $\theta_1\,:=\,\theta_2$, y finalmente el tipo inferido es
+  
   \begin{align*}
-    {\theta_2 \rightarrow \theta_2}
-  \end{align*} 
- 
- \medskip
- 
-  With this idea in mind we'll implement type inference using UUAG library. First at all we define the grammar:
+   \typejud{\empty}{\lambda\,x.x}{\theta_2 \rightarrow \theta_2}
+  \end{align*}
+
+  Con esta idea realizaremos la inferencia de tipos utilizando Attribute Grammars. Definimos la gramática:
   
   \begin{lstlisting}
    data Term
@@ -712,47 +684,38 @@ particular contains many of the print cases that the semantics we give implement
 	      term  :: Term
   \end{lstlisting}
 
-  Where $Var$ is defined as $String$.
+  Donde $Var$ está definido como $String$.
   
-  Types are defined in normal Haskell code with the next grammar:
-  
-  \begin{lstlisting}
-   data Type = AtomType TVar | FunType Type Type
-  \end{lstlisting}
-
-  \indent and $TVar$ is implemented with integer numbers.
-  \medskip
-  
-  We define the attributes of the grammar for lambda terms:
+  Y los siguientes atributos:
   
   \begin{lstlisting}
    attr Term 
-      inh ctx       :: Ctx
-      inh termType  :: Type
-      chn maxTVar   :: TVar
-      syn tsubst    :: TSubst
+      inh ctx       :: {Ctx}
+      inh termType  :: {Type}
+      inh usedTVars :: {S.Set TVar}
+      syn tsubst    :: {TSubst}
   \end{lstlisting}
 
-  The result of type inference will be a substitution to apply on the initial type, and we implement it with a
-  syntesized attribute $\mathbf{tsubst}$. As we saw in the previous example, given a term we assume that it has
-  a type, this assumed type is implemented wit an inherited attribute $\mathbf{termType}$. We'll have a context
-  for assign types to variables too, so we define the attribute $\mathbf{ctx}$ and because is necessary 
-  to generate fresh type variables, we define the chained attribute $\mathbf{maxTVar}$, so when we need
-  to get a fresh type, it will be the following type variable to the $maxTVar$. This attribute is chained
-  because is necessary to pass the value in a transversal way.
+  El resultado de la inferencia de tipos será una substitución a aplicar sobre el tipo inicial, y lo implementamos con 
+  un atributo sintetizado $\mathbf{tsubst}$. Como vimos en el ejemplo anterior, dado un término asumimos que tiene un 
+  tipo determinado, ese tipo asumido está implementado con un atributo sintetizado $\mathbf{termType}$. Tendremos
+  también un contexto de asignación de tipos a las variables con el atributo $\mathbf{ctx}$, y como necesitaremos generar
+  variables de tipos frescas cada vez que asumimos un nuevo tipo, llevamos cuenta de las variables de tipo ya usadas
+  con el atributo $\mathbf{usedTVars}$.
   
-  To see how the implemented algorithm works consider the next term:
+  Para ver el funcionamiento del algoritmo implementado con Attribute Grammars consideremos el siguiente término 
+  sobre el cual inferir el tipo:
   
  \begin{align*}
     \lambda\,f.\lambda\,x.f\;(f\;x)
  \end{align*}
 
- \noindent which is defined in Haskell:
+ \noindent que con la gramática definida quedaría representado por
  \begin{lstlisting}
   Abs "f" (Abs "x" (App (Id "f") (App (Id "f") (Id "x"))))
  \end{lstlisting}
  
- \noindent or in a tree way:
+ \noindent o en forma de árbol:
  
   \begin{center}
   \begin{diagram}[h=2em]
@@ -768,101 +731,125 @@ particular contains many of the print cases that the semantics we give implement
   \end{diagram}
   \end{center}
 
-  For clarity in explanation of the example we omit some details, for example the value of attribute $maxTVar$ needed to 
-  generate fresh variables won't be considered.
-  \medskip
-  
-  The first node is an abstraction. We have to define the value of the inherited attributes on child and
-  to calculate the syntesized attribute in function of it.
-  
+
+  El primer nodo de este árbol es una abstracción. Tenemos que definir entonces el valor de los atributos heredados en
+  el nodo hijo y calcular el atributo sintetizado en función del mismo.
 
   \xymatrix @C=0.1pc @R=0.3pc{
   & & & & & \ar@{-->}@/_-0.3pc/[dddd] & \ar[dddd]^{f} Abs & \ar@{<--}@/_0.3pc/[dddd] & & & & & & & & &\\
-  & & & \dfH{\pi = f:\theta_1} & & &  & & & & & & & & & &\\
-  & & & \dfH{t = \theta_2} & & &  & & \dfH{TS = \{\theta:=\theta_1 \rightarrow \theta_2\} \bigcup \,\{?\}}& & & & & & & &\\
-  & & & \dfH{UV = \{\theta,\theta_1,\theta_2\}} & & &  & & & & & & & & & &\\
+  & & & \dfH{\pi_f = f:\theta_1} & & &  & & & & & & & & & &\\
+  & & & \dfH{t = \theta_2} & & &  & & \dfH{TS = \{\theta_0:=\theta_1 \rightarrow \theta_2\} \bigcup \,\{?\}}& & & & & & & &\\
+  & & & & & &  & & & & & & & & & &\\
   & & & & &  &  Abs &  & & & & & & & & &\\\\
   }
   
-  As we assume for this term the type $\theta$, we must to replace by $\theta_1 \rightarrow \theta_2$ and
-  we define the values of the inherited attributes: the context will contain the pair $f:\theta_1$ and
-  the asummed type on child will be $\theta_2$. The substitution will contain $\theta : \theta_1 \rightarrow \theta_2$
-  and the substitution obtained from child. In the graphics we'll complete the syntesized attribute as we calculate 
-  the attributes in subterms.
-  \medskip
-  
-  In next step, the node is an abstraction too, so we perform the same procedure:
+
+   Como el tipo que habíamos asumido para este término es $\theta$ tendremos que substituirlo por $\theta_1 \rightarrow \theta_2$
+   y entonces el contexto del subtérmino tendrá el par $f : \theta_1$, el tipo asumido será $\theta_2$ y agregamos a las variables
+   usadas $\theta_1$ y $\theta_2$. La substitución contendrá $\theta : \theta_1 \rightarrow \theta_2$ más la substitución del 
+   subtérmino. En los gráficos iremos completando la substitución a medida que calculamos los atributos de los subtérminos.
+   
+   
+   
+   En el siguiente paso, el nodo que analizamos es también una abstracción, por lo tanto repetimos el mismo procedimiento:
    
     \xymatrix @C=0.1pc @R=0.3pc{
     & & & & & \ar@{-->}@/_-0.3pc/[dddd] & \ar[dddd]^{f} Abs & \ar@{<--}@/_0.3pc/[dddd] & & & & & & & & &\\
-    & & & \df{\pi = f:\theta_1} & & &  & & \dfH{TS = \{\theta:=\theta_1 \rightarrow \theta_3 \rightarrow \theta_4,} & & & & & & & &\\
-    & & & \df{t = \theta_2} & & &  & & \;\;\;\;\;\;\;\;\;\;\dfH{\theta_2 := \theta_3 \rightarrow \theta_4\} \bigcup\,\{?\}} & & & & & & & &\\
-    & & & \df{UV = \{\theta,\theta_1,\theta_2\}} & & &  & & & & & & & & & &\\
+    & & & \df{\pi_f = f:\theta_1} & & &  & & 
+    		\dfH{TS = \{\theta_0:=\theta_1 \rightarrow \theta_3 \rightarrow \theta_4,} & & & & & & & &\\
+    & & & \df{t = \theta_2} & & &  & & \;\;\;\;\;\;\;\;\;\;
+    		\dfH{\theta_2 := \theta_3 \rightarrow \theta_4\} \bigcup\,\{?\}} & & & & & & & &\\
+    & & & & & &  & & & & & & & & & &\\
     & & & & & \ar@{-->}@/_-0.3pc/[dddd] & \ar[dddd]^{x} Abs & \ar@{<--}@/_0.3pc/[dddd] & & & & & & & & &\\
-    & & & \dfH{\pi = f:\theta_1,\,x:\theta_3} & & &  & & & & & & & & & &\\
+    & & & \dfH{\pi_{f,x} = \pi_f,\,x:\theta_3} & & &  & & & & & & & & & &\\
     & & & \dfH{t = \theta_4} & & &  & & \dfH{TS = \{\theta_2:\theta_3 \rightarrow \theta_4\} \bigcup\,\{?\}} & & & & & & & &\\
-    & & & \dfH{UV = } & & &  & & & & & & & & & &\\
+    & & & & & &  & & & & & & & & & &\\
     & & & & &  & App  & & & & & & & & & &\\\\
     }
 
-  \noindent $\theta_2$ will be replaced by $\theta_3 \rightarrow \theta_4$, we add to context $x:\theta_3$ and
-  the type asummed to the subterm is $\theta_4$. We update the substitution on initial node adding the obtained
-  in this subterm, and we perform the replacement $\theta_2 := \theta_3 \rightarrow \theta_4$ on it, so
-  we can ensure that the variables occurring on the left side of substitution don't occur on the right side. We
-  perform unification of types when necessary.
+  \noindent $\theta_2$ será substituido por $\theta_3 \rightarrow \theta_4$, al contexto le agregamos $x:\theta_3$ y agregamos
+  las nuevas variables a las usadas. El tipo que le asignamos al subtérmino es $\theta_4$. La substitución del nodo inicial
+  la actualizamos en el gráfico agregando la obtenida en este subtérmino, y al hacerlo realizamos el reemplazo 
+  $\theta_2 := \theta_3 \rightarrow \theta_4$, de esta manera aseguramos que las variables de tipo que ocurren al lado
+  izquierdo no ocurren al lado derecho de la substitución. También al hacer la unión realizamos unificación de tipos en
+  caso de ser necesaria.
   \medskip
   
-  Now we analize the next node which is an application. According to typing rule, if the term type is $\theta_4$,
-  the left subterm has to have a type $\theta_5 \rightarrow \theta_4$ and the right subterm $\theta_5$.
-  We update the values:
+  El nodo que analizamos ahora es una aplicación, y según la regla de tipado si el tipo del término es $\theta_4$,
+  el subtérmino de la izquierda tendrá que tener un tipo $\theta_5 \rightarrow \theta_4$ y el derecho
+  $\theta_5$. Actualizamos los valores de los atributos de acuerdo a esa regla:
   
   \xymatrix @C=0.1pc @R=0.3pc{
     & & & & & \ar@{-->}@/_-0.3pc/[dddd] & \ar[dddd]^{f} Abs & \ar@{<--}@/_0.3pc/[dddd] & & & & & & & & &\\
-    & & & \df{\pi = f:\theta_1} & & &  & & \df{TS = \{\theta:=\theta_1 \rightarrow \theta_3 \rightarrow \theta_4,} & & & & & & & &\\
+    & & & \df{\pi_f = f:\theta_1} & & &  & & \df{TS = \{\theta_0	:=\theta_1 \rightarrow \theta_3 \rightarrow \theta_4,} & & & & & & & &\\
     & & & \df{t = \theta_2} & & &  & & \;\;\;\;\;\;\;\;\;\;\df{\theta_2 := \theta_3 \rightarrow \theta_4\} \bigcup\,\{?\}} & & & & & & & &\\
-    & & & \df{UV = \{\theta,\theta_1,\theta_2\}} & & &  & & & & & & & & & &\\
+    & & & & & &  & & & & & & & & & &\\
     & & & & & \ar@{-->}@/_-0.3pc/[dddd] & \ar[dddd]^{x} Abs & \ar@{<--}@/_0.3pc/[dddd] & & & & & & & & &\\
-    & & & \df{\pi = f:\theta_1,\,x:\theta_3} & & &  & & & & & & & & & &\\
+    & & & \df{\pi_{f,x} = \pi_f,\,x:\theta_3} & & &  & & & & & & & & & &\\
     & & & \df{t = \theta_4} & & &  & & \df{TS = \{\theta_2:\theta_3 \rightarrow \theta_4\} \bigcup\,\{?\}} & & & & & & & &\\
-    & & & \df{UV = } & & &  & & & & & & & & & &\\
+    & & &  & & &  & & & & & & & & & &\\
   & & & & & \ar@{-->}@/_-0.3pc/[dddddlll]!<7ex,0ex> \ar@{-->}@/_0.7pc/[dddddrrr]!<-2ex,0ex> &
 											  \ar[dddddlll] App \ar[dddddrr] & 
 		    \ar@{<--}@/_-0.6pc/[dddddllll]!<2ex,0ex>
 		    \ar@{<--}@/_0.7pc/[dddddr]!<15ex,-10ex> & & & & & & & & &\\
-  & & & \dfH{\pi} & & & \dfH{\pi}  & & & & & & & & & &\\
+  & & & \dfH{\pi_{f,x}} & & & \dfH{\pi_{f,x}}  & & & & & & & & & &\\
   & & & \dfH{t = \theta_5 \rightarrow \theta_4} & & & \dfH{t = \theta_5} & & \dfH{TS = ?} & & & & & & & &\\
-  & & & \dfH{UV = } & & &   & & & & & & & & & &\\
   & & & & & &   & & & & & & & & & &\\
-  & & & f & & & & & App & & & & & & & &\\\\
+  & & & & & &   & & & & & & & & & &\\
+  & & & f & & &   & & App & & & & & & & &\\
   }
   
-  The substitution on an application will be the union of the substitutions in subterms, so we don't complete this
-  yet.
+  La substitución en una aplicación será la unión de las de los subtérminos, por eso todavía no la completamos
   \medskip
 
-  Now we have two terms to analize. The left is the identifier with variable $y$ and asummed type is $\theta_5 \rightarrow \theta_4$
-  but in the context we have $f:\theta_1$. So, we need to add $\theta_1 := \theta_5 \rightarrow \theta_4$ to the substitution.
+  Ahora tenemos dos términos que analizar. El izquierdo es el identificador con la variable $f$ y el tipo asumido es
+  $\theta_5 \rightarrow \theta_4$, pero en el contexto tenemos la información $f:\theta_1$ entonces agregamos
+  a la substitución $\theta_1 := \theta_5 \rightarrow \theta_4$. 
   
-  The right term is another application with type $\theta_5$, so we realize the same procedure:
+  En el término derecho de la aplicación tenemos otra aplicación con el tipo $\theta_5$, entonces realizamos el mismo
+  procedimiento:
   
-  \begin{center}
-   gráfico
-  \end{center}
+      \xymatrix @C=0.1pc @R=0.3pc{
+    & & & & & \ar@{-->}@/_-0.3pc/[dddd] & \ar[dddd]^{f} Abs & \ar@{<--}@/_0.3pc/[dddd] & & & & & & & & &\\
+    & & & \df{\pi_f = f:\theta_1} & & &  & & \df{TS = \{\theta_0	:=\theta_1 \rightarrow \theta_3 \rightarrow \theta_4,} & & & & & & & &\\
+    & & & \df{t = \theta_2} & & &  & & \;\;\;\;\;\;\;\;\;\;\df{\theta_2 := \theta_3 \rightarrow \theta_4\} \bigcup\,\{?\}} & & & & & & & &\\
+    & & & & & &  & & & & & & & & & &\\
+    & & & & & \ar@{-->}@/_-0.3pc/[dddd] & \ar[dddd]^{x} Abs & \ar@{<--}@/_0.3pc/[dddd] & & & & & & & & &\\
+    & & & \df{\pi_{f,x} = \pi_f,\,x:\theta_3} & & &  & & & & & & & & & &\\
+    & & & \df{t = \theta_4} & & &  & & 
+    	  \df{TS = \{\theta_2:=\theta_3 \rightarrow \theta_4,} & & & & & & & &\\
+    & & & & & &  & & 
+    	  \;\;\;\;\;\;\;\;\;\;\;\;\df{\theta_1:=\theta_5 \rightarrow \theta_6,}& & & & & & & &\\
+  & & & & & \ar@{-->}@/_-0.3pc/[dddddlll]!<7ex,0ex> \ar@{-->}@/_0.7pc/[dddddrrr]!<-2ex,0ex> &
+											  \ar[dddddlll] App \ar[dddddrr] & 
+		    \ar@{<--}@/_-0.6pc/[dddddllll]!<2ex,0ex>
+		    \ar@{<--}@/_0.7pc/[dddddr]!<15ex,-10ex> &
+		    \df{\theta_5:=\theta_6, \theta_4	:=\theta_5, \theta_3:=\theta_6\}} & & & & & & & &\\
+  & & & \df{\pi_{f,x}} & & & \df{\pi_{f,x}}  & & & & & & & & & &\\
+  & & & \df{t = \theta_5 \rightarrow \theta_4} & & & \df{t = \theta_5} & &
+  		\df{TS = \{\theta_1:\theta_6 \rightarrow \theta_5, \theta_3:\theta_6\}} & & & & & & & &\\
+  & & & & & &   \df{TS = \{\theta_1:\theta_5 \rightarrow \theta_4\}} & & & & & & & & & &\\
+  & & & & & &   & & & & & & & & & &\\
+& & & f & & &   & & \ar@{-->}@/_1.4pc/[ddddd]!<-20ex,-10ex>
+					\ar@{-->}@/_1.4pc/[dddddrr]
+					\ar[dddddl] App \ar[dddddrr]
+					\ar@{<--}@/_-1pc/[dddddrr]!<2ex,0ex>
+					\ar@{<--}@/_-1pc/[dddddl]!<1ex,1ex>
+					& & & & & & & &\\
+& & & & & & \dfH{\pi_{f,x}} & & \dfH{\pi_{f,x}} & & & & & & & & \\
+& & & & & & \dfH{t = \theta_6 \rightarrow \theta_5} 
+			& & \dfH{t = \theta_6} & & & 
+			\dfH{TS = \{\theta_3:\theta_6\}} & & & & & \\
+& & & & & & & & \dfH{TS = \{\theta_1:\theta_6 \rightarrow \theta_5\}} &   & & & & & & & \\
+& & & & & &   & & & & & & & & & &\\
+& & & & & &   & f & & & x & & & & & &\\
+}
    
   Ahora tenemos de nuevo en el lado izquierdo el identificador $f$ y el tipo asumido es $\theta_6 \rightarrow \theta_5$,
   y como en el contexto tenemos $f:\theta_1$ agregamos a la substitución $\theta_1 := \theta_6 \rightarrow \theta_5$.
   
   Al momento de concatenar las substituciones vemos que tenemos 
   
-  
-  \section{Conclusions}
-  
-  En la primera sección de este trabajo explicamos el ejemplo ``RepMin'' el cual es introducido en varios
-  trabajos sobre Attribute Grammars como en (AFP3) o (tesis del chabón). Una manera de ver la sintaxis y semántica
-  de lenguajes es mediante álgebras iniciales (initial algebra semantics), y nos encontramos estudiando este tema
-  utilizando teoría de categorías
-  utilizando teoría de categorías y es un área que nos encontramos 
-  estudiando en nuestro doctorado por lo cual nos pareció interesante introducirlo. Todavía 
   
   
   
