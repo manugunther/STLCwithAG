@@ -5,10 +5,10 @@ import Parser
 
 examples :: [Term]
 examples = [ identity
-           --, first, second
-           --, application
-           --, twice, thrice
-           --, comp
+           , first, second
+           , application
+           , twice, thrice
+           , comp
            --, delta
            --, ycomb
            , t1, t2, t2', t3
