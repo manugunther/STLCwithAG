@@ -409,7 +409,7 @@ Term ::= Var
 
 The implementation of a parser for the syntax of lambda calculus is rather simple,
 even adding the restriction that we only allow to parse closed terms, i.e. terms in which
-don't occur free variables. However, suppose we should to parse the following string,\\
+don't occur free variables. However, suppose we have to parse the following string,\\
 
 $\lambda a . s$\\
 
@@ -421,7 +421,7 @@ i.e. a mistake was made by writing the string. Thus, a parser a little bit
 more interesting would be one that detects that kind of errors, corrects them
 and gives information about such decision.
 
-For the implementation of parser we use the library ``uu-parsinglib''
+For the implementation of the parser we use the library ``uu-parsinglib''
 which provides exactly an error correction mechanism. For example, being ``pa'' the
 parser of the letter ``a'', trying to parse ``b'' will produce an ``a'' the correction
 being the replacement of ``b'' for ``a'':
@@ -441,22 +441,23 @@ moment and generate parsers for each variable in the list.\\
 
 Before introducing the parsers concerning each construction of the grammar, 
 we define some general parsers that will be useful.
+We generate a parser from a default parser and a list of strings.
 
 \begin{lstlisting}
 parseTermSym :: Parser String -> [String] -> Parser String
 \end{lstlisting}
-We generate a parser from a default parser and a list of strings.
 
-\begin{lstlisting}
-parseXSym :: Parser String
-\end{lstlisting} with X $\in$ {Lam,Dot,App}\\
 Parsers for the symbols $\lambda$, $.$ and $@$. Further we can
 parser ``\textbackslash \textbackslash'' instead of $\lambda$ and $->$ or $\rightarrow$
 instead of ``$.$'' .
 
 \begin{lstlisting}
+parseXSym :: Parser String
+\end{lstlisting} with X $\in$ {Lam,Dot,App}. And parser for variables.
+
+\begin{lstlisting}
 parseVar :: Parser Var
-\end{lstlisting} Parser for variables.\\
+\end{lstlisting}
 
 Now, given the list of variable to parse, say $vars$, identifier
 we generate parsers for each variable in the list and fail as default parser:
@@ -485,6 +486,7 @@ list of bound variables, i.e. a function with type:
 Parser Var -> (Var -> Parser Term) -> Parser Term
 \end{lstlisting}
 
+\noindent
 but this is just the type of the bind operator ($>>=$), $m \ a \rightarrow (a \rightarrow m \ b) \rightarrow m \ b$. This forces us to use monads, for which we need to use the addLength function.
 We are not sure if there exist a way to solve this without monads, with the purpose of avoiding the
 use of addLength and of course... monads. Then, the final definition is,
@@ -549,7 +551,7 @@ Despite of having few constructors, a term of the lambda calculus can be complex
 to read and an ``organization'' of the subterms when it comes to writing can be
 very helpful for the interpretation. For example, the term 
 $(\lambda x \rightarrow x@x)@(\lambda x \rightarrow x@x)$
-does not bring much trouble, but however if we have,
+does not bring much trouble, however if we have,
 $(\lambda x \rightarrow
 	\lambda y \rightarrow
 		\lambda f \rightarrow f @ (x @ (\lambda w \rightarrow f @ w)) @ (y @ f @ x))$
@@ -567,7 +569,7 @@ As we saw for the case of Repmin, we must define attributes and give rules for
 each constructor, this time for $Term$, which express how to transform each of its productions
 in its representation as strings.
 
-We want a synthesised attribute, that called ``pprint'', that is the result
+We want a synthesised attribute, called ``pprint'', that is the result
 of transforming a $Term$ in a $String$ and an inherited attribute that we need to
 know when to enclose a term between brackets or not.
 
@@ -652,7 +654,8 @@ to read. In particular, it contains many of the print cases that the semantics w
 \subsection{Type Inference}
 
 
- The main purpose of this work is to define type inference for the simply typed lambda calculus. Remind the typing rules:
+ The main purpose of this work is to define type inference for the simply typed 
+ lambda calculus. Let us recall the typing rules:
  
  \begin{align*}
  \infer[^{\mathtt{T-VAR}}]
@@ -673,19 +676,19 @@ to read. In particular, it contains many of the print cases that the semantics w
        }
   \end{align*}
  
- In a context $\pi$ a term $t$ will have type $\theta$ if exists a derivation of
+ In a context $\pi$ a term $t$ will have type $\theta$ if there exists a derivation of
  $\typejud{\pi}{t}{\theta}$ using the previous rules.
  
  To infer the type of a term we can assume that it has type $\theta$ and then perform substitutions
- to this type until obtain a valid type judgement. Supose we have the next term:
+ to this type until obtaining a valid type judgement. Supose we have the next term:
  
  \begin{align*}
     \lambda\,x.x
  \end{align*}
 
  We assume that it has type $\theta$, but as this is an abstraction, the only rule to construct a valid
- judgement is $\mathtt{T-ABS}$ where the type has to be in the form $\theta_1 \rightarrow \theta_2$,
- so we can replace $\theta\,:=\,\theta_1 \rightarrow \theta_2$ and then we try to construct type judgement
+ judgement is $\mathtt{T-ABS}$ where the type should be of the form $\theta_1 \rightarrow \theta_2$,
+ so we can replace $\theta\,:=\,\theta_1 \rightarrow \theta_2$ and then we try to construct type derivation for
  $\typejud{\pi,(x:\theta_1)}{x}{\theta_2}$. As the term now is a variable, the only possible rule
  is $\mathtt{T-VAR}$ and we need to replace $\theta_1$ for $\theta_2$. Finally the inferred type is:
  
@@ -695,7 +698,8 @@ to read. In particular, it contains many of the print cases that the semantics w
  
  \medskip
  
-  With this idea in mind we'll implement type inference using UUAG library. First at all we define the grammar:
+  With this idea in mind we'll implement type inference using the UUAG library. 
+  First of all we define the grammar, where $Var$ is $String$:
   
   \begin{lstlisting}
    data Term
@@ -704,10 +708,9 @@ to read. In particular, it contains many of the print cases that the semantics w
 	| Abs var   :: {Var}
 	      term  :: Term
   \end{lstlisting}
-
-  Where $Var$ is defined as $String$.
   
-  Types are defined using Attribute Grammars too with the next grammar:
+  Types are also defined using AG; a type is either a type variable, 
+  concretely implemented as numbers, or an arrow type:
   
   \begin{lstlisting}
    data Type
@@ -729,9 +732,9 @@ to read. In particular, it contains many of the print cases that the semantics w
   \end{lstlisting}
 
   The result of type inference will be a substitution to apply on the initial type, and we implement it with a
-  syntesized attribute $\mathbf{tsubst}$. As we saw in the previous example, given a term we assume that it has
+  synthesized attribute $\mathbf{tsubst}$. As we saw in the previous example, given a term we assume that it has
   a type, this assumed type is implemented wit an inherited attribute $\mathbf{termType}$. We'll have a context
-  for assign types to variables too, so we define the attribute $\mathbf{ctx}$ and because is necessary 
+  for assigning types to variables too, so we define the attribute $\mathbf{ctx}$ and because is necessary 
   to generate fresh type variables, we define the chained attribute $\mathbf{maxTVar}$, so when we need
   to get a fresh type, it will be the following type variable to the $maxTVar$. This attribute is chained
   because is necessary to pass the value in a transversal way.
@@ -763,7 +766,8 @@ to read. In particular, it contains many of the print cases that the semantics w
   \end{diagram}
   \end{center}
 
-  For clarity in explanation of the example we omit some details, for example the value of attribute $maxTVar$ needed to 
+  For the sake of clarity in explanation of the example, we omit some details,
+  for example the value of attribute $maxTVar$ needed to 
   generate fresh variables won't be considered.
   \medskip
   
@@ -775,28 +779,29 @@ to read. In particular, it contains many of the print cases that the semantics w
 	\includegraphics[height=4cm]{primero.pdf}
   \end{center}
   
-  As we assume for this term the type $\theta$, we must to replace by $\theta_1 \rightarrow \theta_2$ and
+  As we assume for this term the type $\theta$, we must replace by $\theta_1 \rightarrow \theta_2$ and
   we define the values of the inherited attributes: the context will contain the pair $f:\theta_1$ and
   the asummed type on child will be $\theta_2$. The substitution will contain $\theta : \theta_1 \rightarrow \theta_2$
   and the substitution obtained from child. In the graphics we'll complete the syntesized attribute as we calculate 
   the attributes in subterms.
   \medskip
   
-  In next step, the node is an abstraction too, so we perform the same procedure:
+  In the next step, the node is an abstraction too, so we perform the same procedure:
    
   \begin{center}
 	\includegraphics[height=7cm]{segundo.pdf}
   \end{center}
 
-  \noindent $\theta_2$ will be replaced by $\theta_3 \rightarrow \theta_4$, we add to context $x:\theta_3$ and
-  the type asummed to the subterm is $\theta_4$. We update the substitution on initial node adding the obtained
-  in this subterm, and we perform the replacement $\theta_2 := \theta_3 \rightarrow \theta_4$ on it, so
+  \noindent $\theta_2$ will be replaced by $\theta_3 \rightarrow \theta_4$, we add to the context $x:\theta_3$ and
+  the type asummed to the subterm is $\theta_4$. We update the substitution in the first node adding the obtained
+  one in this subterm, and we perform the replacement $\theta_2 := \theta_3 \rightarrow \theta_4$ on it, so
   we can ensure that the variables occurring on the left side of substitution don't occur on the right side. We
   perform unification of types when necessary.
   \medskip
   
-  Now we analize the next node which is an application. According to typing rule, if the term type is $\theta_4$,
-  the left subterm has to have a type $\theta_5 \rightarrow \theta_4$ and the right subterm $\theta_5$.
+  Now we analize the next node which is an application. According to the corresponding typing rule, if the type of
+  the application is $\theta_4$,
+  the operator should have an arrow type $\theta_5 \rightarrow \theta_4$ while the operand should have $\theta_5$.
   We update the values:
   
   \begin{center}
@@ -831,24 +836,17 @@ to read. In particular, it contains many of the print cases that the semantics w
   
   In the first section we explained the ``repmin'' problem, which is introduced in several papers
   about Attribute Grammars. A way of thinking about syntax and semantics is by initial algebras and
-  we are studying it at the moment using category theory. Because of this we try to applicate
-  some of that concepts in the implementation of repmin problem and we obtained an equivalent 
-  solution to those found in the bibliografy. Nevertheless there are concepts that we need
+  we are studying it at the moment using category theory. Because of this we try to apply
+  some of those concepts in the implementation of repmin problem and we obtained an equivalent 
+  solution to those found in the bibliography. Nevertheless there are concepts that we need
   to understand in a better way.
   
   To apply the power of Attribute Grammars we chose Type inference of lambda calculus because we
   are studying it in our phd and we think that is an interesting problem to solve. We found the main difficulty
   when we implemented unification and substitution and finally we found a solution using Attribute Grammars too,
-  but we didn't explain in this paper.
+  but we didn't explain this solution in this report due to the lack of time.
   
-  Finally, we decided to write this ``attempt of report'' to practice writing at the beginning of phd and we know
-  that we need to improve this. We apologize for the many mistakes that you can find.
+  Finally, we decided to write this ``attempt of report'' to practice writing at the beginning our phd and we know
+  that we need to improve this. We apologize for the many mistakes that you might have found.
   
-  
-  
-   
 \end{document}
-
-
-
-
